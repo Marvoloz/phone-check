@@ -186,18 +186,6 @@
     outline: 3px solid var(--tape);
     outline-offset: 2px;
   }
-  .parts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 0 0 1rem;
-  }
-  .parts:empty { display: none; }
-  .parts button { padding: 0.6rem 0.9rem; }
-  .parts button.done {
-    border-color: var(--ok);
-    color: var(--ok);
-  }
   .status {
     min-height: 1.5rem;
     font-weight: 500;
@@ -238,7 +226,7 @@
 
 <main>
   <h1>Снимок телефона</h1>
-  <p class="lead">Страница снимает параметры браузера этого телефона: экран, видеокарту и голоса синтеза речи. Сама она ничего никуда не отправляет — результат вы пересылаете сами кнопкой ниже.</p>
+  <p class="lead">Страница снимает параметры браузера этого телефона: экран, видеокарту и голоса синтеза речи. Сама она ничего никуда не отправляет — результат вы сохраняете или копируете кнопкой ниже.</p>
 
   <ul class="steps" aria-live="polite">
     <li><span>Экран и окно</span><span class="state" id="st-screen">жду</span></li>
@@ -257,15 +245,10 @@
     <dt>Голоса</dt><dd id="sm-voices">—</dd>
   </dl>
 
-  <label class="field" for="modelNote">Какой это телефон</label>
-  <input type="text" id="modelNote" placeholder="Например, Samsung Galaxy A54" autocomplete="off">
-  <p class="hint">Необязательно, но очень помогает, если сайт не видит модель сам.</p>
-
   <div class="actions">
-    <button class="primary" id="btnShare" disabled>Отправить результат</button>
-    <button id="btnCopy" disabled>Скопировать</button>
+    <button class="primary" id="btnSave" disabled>Сохранить файл</button>
+    <button id="btnCopy" disabled>Скопировать одним сообщением</button>
   </div>
-  <div class="parts" id="parts" aria-label="Части результата для копирования"></div>
   <p class="status" id="status" role="status"></p>
 
   <details id="rawBox">
@@ -273,7 +256,7 @@
     <textarea id="raw" readonly spellcheck="false" aria-label="Результат в формате JSON"></textarea>
   </details>
 
-  <p class="note">В результат не попадают ни IP-адрес, ни аккаунты, ни история — только технические параметры браузера. Если результат пересылаете текстом через чат и он длинный, страница разобьёт его на части — отправьте их все по очереди. Если кнопки «Отправить» и «Скопировать» не сработали, откройте «Показать результат целиком», выделите весь текст и скопируйте его вручную.</p>
+  <p class="note">В результат не попадают ни IP-адрес, ни аккаунты, ни история — только технические параметры браузера. «Сохранить файл» кладёт результат в «Загрузки» — его можно приложить к сообщению. «Скопировать одним сообщением» копирует результат в сжатом виде: это одна строка из латинских букв и цифр, начинающаяся с SNAPSHOT1 — вставьте её в сообщение целиком.</p>
 </main>
 
 <script>
@@ -525,10 +508,12 @@
   }
 
   /* ---------- Rendering ---------- */
+  var packedText = null;   // сжатый результат для копирования, готовится заранее
+
   function renderSummary() {
     var s = result.screen, w = result.webgl || {}, ch = result.clientHints, v = result.voices;
     var high = ch && ch.high ? ch.high : null;
-    $("sm-model").textContent = high && high.model ? high.model : "не видно — укажите ниже";
+    $("sm-model").textContent = high && high.model ? high.model : "не видно";
     $("sm-android").textContent = high && high.platformVersion ? high.platformVersion : "—";
     $("sm-gpu").textContent = w.UnmaskedRenderer || w.Renderer || "—";
     $("sm-screen").textContent = s.width + " × " + s.height + " при DPR " + s.devicePixelRatio;
@@ -536,66 +521,14 @@
     $("sm-voices").textContent = v ? (v.length + (v.length ? " — первый: " + v[0].name : "")) : "нет API";
   }
 
-  function jsonText() {
-    result.modelNote = $("modelNote").value.trim();
-    return JSON.stringify(result, null, 2);
-  }
+  function jsonText() { return JSON.stringify(result, null, 2); }
 
   function refreshRaw() { $("raw").value = jsonText(); }
 
-  /* Compact text for chats: no whitespace, voices summarized */
-  var PART_LIMIT = 3500;
-
-  function compactText() {
-    result.modelNote = $("modelNote").value.trim();
-    var copy = JSON.parse(JSON.stringify(result));
-    if (Array.isArray(copy.voices)) {
-      copy.voices = {
-        count: copy.voices.length,
-        first: copy.voices.slice(0, 5).map(function (v) { return v.name + " | " + v.lang; })
-      };
-    }
-    copy.compact = true;
-    return JSON.stringify(copy);
-  }
-
-  function splitParts(text) {
-    var parts = [];
-    for (var i = 0; i < text.length; i += PART_LIMIT) parts.push(text.slice(i, i + PART_LIMIT));
-    return parts.map(function (chunk, idx) {
-      return "[snapshot part " + (idx + 1) + "/" + parts.length + "]" + chunk;
-    });
-  }
-
-  function renderParts(parts) {
-    var box = $("parts");
-    box.innerHTML = "";
-    parts.forEach(function (part, idx) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.textContent = "Скопировать часть " + (idx + 1) + " из " + parts.length;
-      b.addEventListener("click", function () {
-        copyText(part).then(function (ok) {
-          if (ok) {
-            b.className = "done";
-            b.textContent = "Часть " + (idx + 1) + " скопирована";
-            status("Вставьте часть " + (idx + 1) + " в сообщение и отправьте, затем скопируйте следующую.", "ok");
-          } else {
-            $("rawBox").open = true;
-            $("raw").value = part;
-            status("Не удалось скопировать автоматически. Выделите текст ниже и скопируйте вручную.", "bad");
-          }
-        });
-      });
-      box.appendChild(b);
-    });
-  }
-
   function fileName() {
-    var base = (result.modelNote ||
-                (result.clientHints && result.clientHints.high && result.clientHints.high.model) ||
-                (result.webgl && result.webgl.UnmaskedRenderer) || "phone");
-    base = base.replace(/[^A-Za-z0-9А-Яа-яЁё._-]+/g, "_").slice(0, 40);
+    var base = (result.clientHints && result.clientHints.high && result.clientHints.high.model) ||
+               (result.webgl && result.webgl.UnmaskedRenderer) || "phone";
+    base = base.replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 40);
     return "snapshot_" + base + ".json";
   }
 
@@ -603,6 +536,39 @@
     var el = $("status");
     el.textContent = text;
     el.className = "status" + (cls ? " " + cls : "");
+  }
+
+  /* Компактный вариант для копирования: без пробелов, голоса — только сводка */
+  function compactText() {
+    var copy = JSON.parse(JSON.stringify(result));
+    if (Array.isArray(copy.voices)) {
+      copy.voices = {
+        count: copy.voices.length,
+        first: copy.voices.slice(0, 5).map(function (x) { return x.name + " | " + x.lang; })
+      };
+    }
+    copy.compact = true;
+    return JSON.stringify(copy);
+  }
+
+  /* gzip + base64 → одна строка SNAPSHOT1:... (около 3 тыс. символов) */
+  function packResult() {
+    var text = compactText();
+    if (!window.CompressionStream || !window.Response || !window.Blob) {
+      return Promise.resolve("SNAPSHOT0:" + text);
+    }
+    try {
+      var stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+      return new Response(stream).arrayBuffer().then(function (buf) {
+        var bytes = new Uint8Array(buf), bin = "";
+        for (var i = 0; i < bytes.length; i += 0x8000) {
+          bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+        }
+        return "SNAPSHOT1:" + btoa(bin);
+      }, function () { return "SNAPSHOT0:" + text; });
+    } catch (e) {
+      return Promise.resolve("SNAPSHOT0:" + text);
+    }
   }
 
   function copyText(text) {
@@ -624,67 +590,41 @@
   }
 
   $("btnCopy").addEventListener("click", function () {
-    var text = compactText();
-    refreshRaw();
-    if (text.length > PART_LIMIT) {
-      renderParts(splitParts(text));
-      status("Результат длинный для чата — отправьте его частями: нажимайте кнопки по очереди.", "ok");
-      return;
-    }
-    $("parts").innerHTML = "";
+    var text = packedText || ("SNAPSHOT0:" + compactText());
     copyText(text).then(function (ok) {
-      if (ok) status("Скопировано. Вставьте в сообщение и отправьте.", "ok");
+      if (ok) status("Скопировано (" + text.length + " символов). Вставьте в сообщение целиком и отправьте.", "ok");
       else {
         $("rawBox").open = true;
+        $("raw").value = text;
         status("Не удалось скопировать автоматически. Выделите текст ниже и скопируйте вручную.", "bad");
       }
     });
   });
 
-  $("btnShare").addEventListener("click", function () {
-    var text = jsonText();
-    refreshRaw();
-    var file = null;
-    try { file = new File([text], fileName(), { type: "application/json" }); } catch (e) {}
-
-    var tryFile = file && navigator.canShare && safe(function () { return navigator.canShare({ files: [file] }); }, false);
-    var sharePromise;
-    if (tryFile) {
-      sharePromise = navigator.share({ files: [file], title: "Снимок телефона" });
-    } else if (navigator.share) {
-      sharePromise = navigator.share({ title: "Снимок телефона", text: compactText() });
-    } else {
-      sharePromise = Promise.reject({ name: "NoShare" });
+  $("btnSave").addEventListener("click", function () {
+    try {
+      var blob = new Blob([jsonText()], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = fileName();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+      status("Файл " + fileName() + " сохранён в «Загрузки». Приложите его к сообщению.", "ok");
+    } catch (e) {
+      $("rawBox").open = true;
+      refreshRaw();
+      status("Не удалось сохранить файл. Выделите текст ниже и скопируйте вручную.", "bad");
     }
-
-    sharePromise.then(function () {
-      status("Отправлено.", "ok");
-    }, function (err) {
-      if (err && err.name === "AbortError") { status(""); return; }
-      var compact = compactText();
-      if (compact.length > PART_LIMIT) {
-        renderParts(splitParts(compact));
-        status("Отправка файлом недоступна. Отправьте результат частями: нажимайте кнопки по очереди.", "ok");
-        return;
-      }
-      copyText(compact).then(function (ok) {
-        if (ok) status("Отправка недоступна здесь, поэтому результат скопирован. Вставьте его в сообщение.", "ok");
-        else {
-          $("rawBox").open = true;
-          status("Отправка недоступна. Выделите текст ниже и скопируйте вручную.", "bad");
-        }
-      });
-    });
   });
-
-  $("modelNote").addEventListener("input", function () { if (result) refreshRaw(); });
 
   /* ---------- Run ---------- */
   function run() {
     result = {
       snapshotVersion: 1,
-      capturedAt: new Date().toISOString(),
-      modelNote: ""
+      capturedAt: new Date().toISOString()
     };
 
     result.screen = safe(collectScreen, null);
@@ -714,9 +654,12 @@
 
       renderSummary();
       refreshRaw();
-      $("btnShare").disabled = false;
-      $("btnCopy").disabled = false;
-      status("Снимок готов. Нажмите «Отправить результат».", "ok");
+      $("btnSave").disabled = false;
+      packResult().then(function (packed) {
+        packedText = packed;
+        $("btnCopy").disabled = false;
+      });
+      status("Снимок готов. Сохраните файл или скопируйте результат.", "ok");
     });
   }
 
