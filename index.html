@@ -186,6 +186,18 @@
     outline: 3px solid var(--tape);
     outline-offset: 2px;
   }
+  .parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+  }
+  .parts:empty { display: none; }
+  .parts button { padding: 0.6rem 0.9rem; }
+  .parts button.done {
+    border-color: var(--ok);
+    color: var(--ok);
+  }
   .status {
     min-height: 1.5rem;
     font-weight: 500;
@@ -253,6 +265,7 @@
     <button class="primary" id="btnShare" disabled>Отправить результат</button>
     <button id="btnCopy" disabled>Скопировать</button>
   </div>
+  <div class="parts" id="parts" aria-label="Части результата для копирования"></div>
   <p class="status" id="status" role="status"></p>
 
   <details id="rawBox">
@@ -260,7 +273,7 @@
     <textarea id="raw" readonly spellcheck="false" aria-label="Результат в формате JSON"></textarea>
   </details>
 
-  <p class="note">В результат не попадают ни IP-адрес, ни аккаунты, ни история — только технические параметры браузера. Если кнопки «Отправить» и «Скопировать» не сработали, откройте «Показать результат целиком», выделите весь текст и скопируйте его вручную.</p>
+  <p class="note">В результат не попадают ни IP-адрес, ни аккаунты, ни история — только технические параметры браузера. Если результат пересылаете текстом через чат и он длинный, страница разобьёт его на части — отправьте их все по очереди. Если кнопки «Отправить» и «Скопировать» не сработали, откройте «Показать результат целиком», выделите весь текст и скопируйте его вручную.</p>
 </main>
 
 <script>
@@ -530,6 +543,54 @@
 
   function refreshRaw() { $("raw").value = jsonText(); }
 
+  /* Compact text for chats: no whitespace, voices summarized */
+  var PART_LIMIT = 3500;
+
+  function compactText() {
+    result.modelNote = $("modelNote").value.trim();
+    var copy = JSON.parse(JSON.stringify(result));
+    if (Array.isArray(copy.voices)) {
+      copy.voices = {
+        count: copy.voices.length,
+        first: copy.voices.slice(0, 5).map(function (v) { return v.name + " | " + v.lang; })
+      };
+    }
+    copy.compact = true;
+    return JSON.stringify(copy);
+  }
+
+  function splitParts(text) {
+    var parts = [];
+    for (var i = 0; i < text.length; i += PART_LIMIT) parts.push(text.slice(i, i + PART_LIMIT));
+    return parts.map(function (chunk, idx) {
+      return "[snapshot part " + (idx + 1) + "/" + parts.length + "]" + chunk;
+    });
+  }
+
+  function renderParts(parts) {
+    var box = $("parts");
+    box.innerHTML = "";
+    parts.forEach(function (part, idx) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = "Скопировать часть " + (idx + 1) + " из " + parts.length;
+      b.addEventListener("click", function () {
+        copyText(part).then(function (ok) {
+          if (ok) {
+            b.className = "done";
+            b.textContent = "Часть " + (idx + 1) + " скопирована";
+            status("Вставьте часть " + (idx + 1) + " в сообщение и отправьте, затем скопируйте следующую.", "ok");
+          } else {
+            $("rawBox").open = true;
+            $("raw").value = part;
+            status("Не удалось скопировать автоматически. Выделите текст ниже и скопируйте вручную.", "bad");
+          }
+        });
+      });
+      box.appendChild(b);
+    });
+  }
+
   function fileName() {
     var base = (result.modelNote ||
                 (result.clientHints && result.clientHints.high && result.clientHints.high.model) ||
@@ -563,8 +624,14 @@
   }
 
   $("btnCopy").addEventListener("click", function () {
-    var text = jsonText();
+    var text = compactText();
     refreshRaw();
+    if (text.length > PART_LIMIT) {
+      renderParts(splitParts(text));
+      status("Результат длинный для чата — отправьте его частями: нажимайте кнопки по очереди.", "ok");
+      return;
+    }
+    $("parts").innerHTML = "";
     copyText(text).then(function (ok) {
       if (ok) status("Скопировано. Вставьте в сообщение и отправьте.", "ok");
       else {
@@ -585,7 +652,7 @@
     if (tryFile) {
       sharePromise = navigator.share({ files: [file], title: "Снимок телефона" });
     } else if (navigator.share) {
-      sharePromise = navigator.share({ title: "Снимок телефона", text: text });
+      sharePromise = navigator.share({ title: "Снимок телефона", text: compactText() });
     } else {
       sharePromise = Promise.reject({ name: "NoShare" });
     }
@@ -594,7 +661,13 @@
       status("Отправлено.", "ok");
     }, function (err) {
       if (err && err.name === "AbortError") { status(""); return; }
-      copyText(text).then(function (ok) {
+      var compact = compactText();
+      if (compact.length > PART_LIMIT) {
+        renderParts(splitParts(compact));
+        status("Отправка файлом недоступна. Отправьте результат частями: нажимайте кнопки по очереди.", "ok");
+        return;
+      }
+      copyText(compact).then(function (ok) {
         if (ok) status("Отправка недоступна здесь, поэтому результат скопирован. Вставьте его в сообщение.", "ok");
         else {
           $("rawBox").open = true;
