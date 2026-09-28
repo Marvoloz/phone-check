@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Снимок телефона</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F7F7F2;
+    --ink: #24272C;
+    --ink-soft: #5B6069;
+    --line: #D4D6D9;
+    --tape: #F5C518;
+    --tape-ink: #24272C;
+    --ok: #2E7D4F;
+    --bad: #B42318;
+    --field: #FFFFFF;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1D1F23;
+      --ink: #ECEDEF;
+      --ink-soft: #A3A8B0;
+      --line: #3B3F46;
+      --tape: #F5C518;
+      --tape-ink: #1D1F23;
+      --ok: #5CC28A;
+      --bad: #F27A6B;
+      --field: #25282D;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1D1F23;
+    --ink: #ECEDEF;
+    --ink-soft: #A3A8B0;
+    --line: #3B3F46;
+    --tape: #F5C518;
+    --tape-ink: #1D1F23;
+    --ok: #5CC28A;
+    --bad: #F27A6B;
+    --field: #25282D;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Measuring tape: ticks every 10 CSS px, the width is written on it */
+  .tape {
+    position: relative;
+    height: 3.25rem;
+    background-color: var(--tape);
+    background-image:
+      repeating-linear-gradient(to right, var(--tape-ink) 0 1px, transparent 1px 50px),
+      repeating-linear-gradient(to right, var(--tape-ink) 0 1px, transparent 1px 10px);
+    background-size: 100% 1.1rem, 100% 0.55rem;
+    background-repeat: no-repeat;
+    background-position: 0 0, 0 0;
+    color: var(--tape-ink);
+    overflow: hidden;
+  }
+  .tape-label {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.45rem;
+    font-family: "Unbounded", "Onest", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  main {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+  }
+  h1 {
+    font-family: "Unbounded", "Onest", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 8vw, 2.6rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0.25rem 0 0.75rem;
+  }
+  .lead {
+    color: var(--ink-soft);
+    margin: 0 0 1.5rem;
+    max-width: 30rem;
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0 0 1.75rem;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .steps li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .steps .state {
+    font-weight: 500;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .steps .state.ok { color: var(--ok); }
+  .steps .state.bad { color: var(--bad); }
+
+  .summary {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0 0 1.75rem;
+  }
+  .summary dt { color: var(--ink-soft); }
+  .summary dd {
+    margin: 0;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  label.field {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 0.35rem;
+  }
+  .hint {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 1.5rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  button {
+    font: inherit;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    padding: 0.85rem 1.2rem;
+    cursor: pointer;
+    border: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+  button.primary {
+    background: var(--tape);
+    border-color: var(--tape);
+    color: var(--tape-ink);
+    flex: 1 1 12rem;
+  }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--tape);
+    outline-offset: 2px;
+  }
+  .status {
+    min-height: 1.5rem;
+    font-weight: 500;
+    margin: 0 0 1.5rem;
+  }
+  .status.ok { color: var(--ok); }
+  .status.bad { color: var(--bad); }
+
+  details {
+    border-top: 1px solid var(--line);
+    padding-top: 0.75rem;
+  }
+  summary { cursor: pointer; font-weight: 500; }
+  textarea {
+    width: 100%;
+    height: 16rem;
+    margin-top: 0.75rem;
+    font: 0.8rem/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--ink);
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 0.6rem;
+    resize: vertical;
+  }
+  .note {
+    margin-top: 2rem;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .steps .state { transition: color 0.2s ease; }
+  }
+</style>
+</head>
+<body>
+<div class="tape" aria-hidden="true"><span class="tape-label" id="tapeLabel">… px</span></div>
+
+<main>
+  <h1>Снимок телефона</h1>
+  <p class="lead">Страница снимает параметры браузера этого телефона: экран, видеокарту и голоса синтеза речи. Сама она ничего никуда не отправляет — результат вы пересылаете сами кнопкой ниже.</p>
+
+  <ul class="steps" aria-live="polite">
+    <li><span>Экран и окно</span><span class="state" id="st-screen">жду</span></li>
+    <li><span>Видеокарта, WebGL 1</span><span class="state" id="st-gl1">жду</span></li>
+    <li><span>Видеокарта, WebGL 2</span><span class="state" id="st-gl2">жду</span></li>
+    <li><span>Модель и версия Android</span><span class="state" id="st-ch">жду</span></li>
+    <li><span>Голоса синтеза речи</span><span class="state" id="st-voices">жду</span></li>
+  </ul>
+
+  <dl class="summary" id="summary">
+    <dt>Модель</dt><dd id="sm-model">—</dd>
+    <dt>Android</dt><dd id="sm-android">—</dd>
+    <dt>Видеокарта</dt><dd id="sm-gpu">—</dd>
+    <dt>Экран</dt><dd id="sm-screen">—</dd>
+    <dt>Окно</dt><dd id="sm-window">—</dd>
+    <dt>Голоса</dt><dd id="sm-voices">—</dd>
+  </dl>
+
+  <label class="field" for="modelNote">Какой это телефон</label>
+  <input type="text" id="modelNote" placeholder="Например, Samsung Galaxy A54" autocomplete="off">
+  <p class="hint">Необязательно, но очень помогает, если сайт не видит модель сам.</p>
+
+  <div class="actions">
+    <button class="primary" id="btnShare" disabled>Отправить результат</button>
+    <button id="btnCopy" disabled>Скопировать</button>
+  </div>
+  <p class="status" id="status" role="status"></p>
+
+  <details id="rawBox">
+    <summary>Показать результат целиком</summary>
+    <textarea id="raw" readonly spellcheck="false" aria-label="Результат в формате JSON"></textarea>
+  </details>
+
+  <p class="note">В результат не попадают ни IP-адрес, ни аккаунты, ни история — только технические параметры браузера. Если кнопки «Отправить» и «Скопировать» не сработали, откройте «Показать результат целиком», выделите весь текст и скопируйте его вручную.</p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var result = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function setStep(id, text, cls) {
+    var el = $(id);
+    el.textContent = text;
+    el.className = "state" + (cls ? " " + cls : "");
+  }
+
+  function fmt(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === "boolean") return v ? "True" : "False";
+    if (ArrayBuffer.isView(v) || Array.isArray(v)) return Array.prototype.slice.call(v).join(";");
+    return String(v);
+  }
+
+  function safe(fn, fallback) {
+    try { var v = fn(); return v === undefined ? fallback : v; } catch (e) { return fallback; }
+  }
+
+  function withTimeout(promise, ms) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var t = setTimeout(function () { if (!done) { done = true; resolve(null); } }, ms);
+      promise.then(function (v) { if (!done) { done = true; clearTimeout(t); resolve(v); } },
+                   function () { if (!done) { done = true; clearTimeout(t); resolve(null); } });
+    });
+  }
+
+  /* ---------- Screen and window ---------- */
+  function collectScreen() {
+    var s = window.screen || {};
+    var vv = window.visualViewport;
+    var framed = safe(function () { return window.self !== window.top; }, true);
+    return {
+      width: s.width, height: s.height,
+      availWidth: s.availWidth, availHeight: s.availHeight,
+      availTop: s.availTop, availLeft: s.availLeft,
+      colorDepth: s.colorDepth, pixelDepth: s.pixelDepth,
+      orientationType: safe(function () { return s.orientation.type; }, null),
+      orientationAngle: safe(function () { return s.orientation.angle; }, null),
+      devicePixelRatio: window.devicePixelRatio,
+      innerWidth: window.innerWidth, innerHeight: window.innerHeight,
+      outerWidth: window.outerWidth, outerHeight: window.outerHeight,
+      visualViewportWidth: vv ? vv.width : null,
+      visualViewportHeight: vv ? vv.height : null,
+      visualViewportScale: vv ? vv.scale : null,
+      clientWidth: document.documentElement.clientWidth,
+      clientHeight: document.documentElement.clientHeight,
+      framed: framed,
+      pointerCoarse: safe(function () { return matchMedia("(pointer: coarse)").matches; }, null),
+      hoverNone: safe(function () { return matchMedia("(hover: none)").matches; }, null),
+      anyPointerFine: safe(function () { return matchMedia("(any-pointer: fine)").matches; }, null)
+    };
+  }
+
+  /* ---------- Navigator, locale, network, audio ---------- */
+  function collectNavigator() {
+    var n = navigator;
+    var c = n.connection || {};
+    var ro = safe(function () { return Intl.DateTimeFormat().resolvedOptions(); }, {});
+    return {
+      userAgent: n.userAgent,
+      platform: n.platform,
+      vendor: n.vendor,
+      hardwareConcurrency: n.hardwareConcurrency,
+      deviceMemory: n.deviceMemory === undefined ? null : n.deviceMemory,
+      maxTouchPoints: n.maxTouchPoints,
+      language: n.language,
+      languages: safe(function () { return Array.prototype.slice.call(n.languages); }, null),
+      pdfViewerEnabled: n.pdfViewerEnabled === undefined ? null : n.pdfViewerEnabled,
+      plugins: safe(function () { return n.plugins.length; }, null),
+      mimeTypes: safe(function () { return n.mimeTypes.length; }, null),
+      intlLocale: ro.locale || null,
+      timeZone: ro.timeZone || null,
+      hourCycle: safe(function () { return new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hourCycle; }, null),
+      localeString: safe(function () { return new Date(2026, 0, 31, 13, 5, 7).toLocaleString(); }, null),
+      connection: {
+        type: c.type === undefined ? null : c.type,
+        effectiveType: c.effectiveType === undefined ? null : c.effectiveType,
+        rtt: c.rtt === undefined ? null : c.rtt,
+        downlink: c.downlink === undefined ? null : c.downlink,
+        downlinkMax: c.downlinkMax === undefined ? null : String(c.downlinkMax),
+        saveData: c.saveData === undefined ? null : c.saveData
+      }
+    };
+  }
+
+  function collectAudio() {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    try {
+      var ctx = new Ctx();
+      var a = {
+        sampleRate: ctx.sampleRate,
+        baseLatency: ctx.baseLatency === undefined ? null : ctx.baseLatency,
+        maxChannelCount: ctx.destination.maxChannelCount,
+        state: ctx.state
+      };
+      if (ctx.close) ctx.close();
+      return a;
+    } catch (e) { return null; }
+  }
+
+  /* ---------- WebGL, field names as in the Zenno WebGL block ---------- */
+  var GL1_FIELDS = {
+    Renderer: "RENDERER", Vendor: "VENDOR", Version: "VERSION",
+    ShadingLanguageVersion: "SHADING_LANGUAGE_VERSION",
+    AliasedLineWidthRange: "ALIASED_LINE_WIDTH_RANGE", AliasedPointSizeRange: "ALIASED_POINT_SIZE_RANGE",
+    DepthBits: "DEPTH_BITS", MaxCombinedTextureImageUnits: "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
+    MaxCubeMapTextureSize: "MAX_CUBE_MAP_TEXTURE_SIZE", MaxFragmentUniformVectors: "MAX_FRAGMENT_UNIFORM_VECTORS",
+    MaxRenderBufferSize: "MAX_RENDERBUFFER_SIZE", MaxTextureImageUnits: "MAX_TEXTURE_IMAGE_UNITS",
+    MaxTextureSize: "MAX_TEXTURE_SIZE", MaxVaryingVectors: "MAX_VARYING_VECTORS",
+    MaxVertexAttribs: "MAX_VERTEX_ATTRIBS", MaxVertexTextureImageUnits: "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
+    MaxVertexUniformVectors: "MAX_VERTEX_UNIFORM_VECTORS", MaxViewportDims: "MAX_VIEWPORT_DIMS",
+    SampleBuffers: "SAMPLE_BUFFERS", Samples: "SAMPLES",
+    StencilBackValueMask: "STENCIL_BACK_VALUE_MASK", StencilBackWriteMask: "STENCIL_BACK_WRITEMASK",
+    StencilValueMask: "STENCIL_VALUE_MASK", StencilWriteMask: "STENCIL_WRITEMASK",
+    SubpixelBits: "SUBPIXEL_BITS", RedBits: "RED_BITS", GreenBits: "GREEN_BITS",
+    BlueBits: "BLUE_BITS", AlphaBits: "ALPHA_BITS", StencilBits: "STENCIL_BITS"
+  };
+
+  var GL2_FIELDS = {
+    MaxClientWaitTimeoutWebgl: "MAX_CLIENT_WAIT_TIMEOUT_WEBGL",
+    MaxCombinedFragmentUniformComponents: "MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS",
+    MaxCombinedUniformBlocks: "MAX_COMBINED_UNIFORM_BLOCKS",
+    MaxCombinedVertexUniformComponents: "MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS",
+    MaxElementIndex: "MAX_ELEMENT_INDEX", MaxFragmentInputComponents: "MAX_FRAGMENT_INPUT_COMPONENTS",
+    MaxFragmentUniformBlocks: "MAX_FRAGMENT_UNIFORM_BLOCKS",
+    MaxFragmentUniformComponents: "MAX_FRAGMENT_UNIFORM_COMPONENTS",
+    MaxSamples: "MAX_SAMPLES", MaxServerWaitTimeout: "MAX_SERVER_WAIT_TIMEOUT",
+    MaxTextureLodBias: "MAX_TEXTURE_LOD_BIAS",
+    MaxTransformFeedbackInterleavedComponents: "MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS",
+    MaxTransformFeedbackSeparateComponents: "MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS",
+    MaxUniformBufferBindings: "MAX_UNIFORM_BUFFER_BINDINGS", MaxVaryingComponents: "MAX_VARYING_COMPONENTS",
+    MaxVertexOutputComponents: "MAX_VERTEX_OUTPUT_COMPONENTS", MaxVertexUniformBlocks: "MAX_VERTEX_UNIFORM_BLOCKS",
+    MaxVertexUniformComponents: "MAX_VERTEX_UNIFORM_COMPONENTS",
+    UniformBufferOffsetAlignment: "UNIFORM_BUFFER_OFFSET_ALIGNMENT",
+    MaxElementsIndices: "MAX_ELEMENTS_INDICES", MaxElementsVertices: "MAX_ELEMENTS_VERTICES",
+    MaxProgramTexelOffset: "MAX_PROGRAM_TEXEL_OFFSET",
+    MaxTransformFeedbackSeparateAttribs: "MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS",
+    MinProgramTexelOffset: "MIN_PROGRAM_TEXEL_OFFSET", Max3DTextureSize: "MAX_3D_TEXTURE_SIZE",
+    MaxArrayTextureLayers: "MAX_ARRAY_TEXTURE_LAYERS", MaxUniformBlockSize: "MAX_UNIFORM_BLOCK_SIZE",
+    Version2: "VERSION", ShadingLanguageVersion2: "SHADING_LANGUAGE_VERSION"
+  };
+
+  function getCtx(type) {
+    try {
+      var canvas = document.createElement("canvas");
+      return canvas.getContext(type);
+    } catch (e) { return null; }
+  }
+
+  function readFields(gl, map, target) {
+    Object.keys(map).forEach(function (field) {
+      target[field] = safe(function () { return fmt(gl.getParameter(gl[map[field]])); }, null);
+    });
+  }
+
+  function shaderParams(gl) {
+    var out = {};
+    ["VERTEX_SHADER", "FRAGMENT_SHADER"].forEach(function (shader) {
+      ["LOW_FLOAT", "MEDIUM_FLOAT", "HIGH_FLOAT", "LOW_INT", "MEDIUM_INT", "HIGH_INT"].forEach(function (prec) {
+        out[shader + "." + prec] = safe(function () {
+          var f = gl.getShaderPrecisionFormat(gl[shader], gl[prec]);
+          return f.rangeMin + ";" + f.rangeMax + ";" + f.precision;
+        }, null);
+      });
+    });
+    return out;
+  }
+
+  function collectWebGL() {
+    var gl = getCtx("webgl") || getCtx("experimental-webgl");
+    var gl2 = getCtx("webgl2");
+    var w = { contextsTried: {} };
+
+    w.contextsTried.webgl = !!getCtx("webgl");
+    w.contextsTried["experimental-webgl"] = !!getCtx("experimental-webgl");
+    w.contextsTried.webgl2 = !!gl2;
+    w.AvaliableContexts = Object.keys(w.contextsTried).filter(function (k) { return w.contextsTried[k]; });
+
+    if (gl) {
+      readFields(gl, GL1_FIELDS, w);
+      var dbg = safe(function () { return gl.getExtension("WEBGL_debug_renderer_info"); }, null);
+      w.UnmaskedRenderer = dbg ? safe(function () { return fmt(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)); }, null) : null;
+      w.UnmaskedVendor = dbg ? safe(function () { return fmt(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)); }, null) : null;
+      var aniso = safe(function () {
+        return gl.getExtension("EXT_texture_filter_anisotropic") ||
+               gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
+      }, null);
+      w.MaxAnisotropy = aniso ? safe(function () { return fmt(gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT)); }, null) : null;
+      w.Antialiasing = safe(function () { return fmt(gl.getContextAttributes().antialias); }, null);
+      w.AvaliableExtensions = safe(function () { return gl.getSupportedExtensions(); }, null);
+      w.ShadersParams = shaderParams(gl);
+    }
+    if (gl2) {
+      readFields(gl2, GL2_FIELDS, w);
+      w.AvaliableExtensions2 = safe(function () { return gl2.getSupportedExtensions(); }, null);
+      w.ShadersParams2 = shaderParams(gl2);
+    }
+    return { gl1: !!gl, gl2: !!gl2, data: w };
+  }
+
+  /* ---------- Client Hints ---------- */
+  function collectClientHints() {
+    var d = navigator.userAgentData;
+    if (!d) return Promise.resolve(null);
+    var low = {
+      brands: safe(function () { return d.brands.map(function (b) { return { brand: b.brand, version: b.version }; }); }, null),
+      mobile: d.mobile,
+      platform: d.platform
+    };
+    if (!d.getHighEntropyValues) return Promise.resolve({ low: low, high: null });
+    var hints = ["model", "platformVersion", "architecture", "bitness", "fullVersionList",
+                 "uaFullVersion", "formFactors", "wow64"];
+    return withTimeout(d.getHighEntropyValues(hints), 3000).then(function (high) {
+      return { low: low, high: high };
+    });
+  }
+
+  /* ---------- Speech voices (as in the Zenno SpeechVoice block) ---------- */
+  function collectVoices() {
+    if (!window.speechSynthesis) return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      var tries = 0;
+      function read() {
+        var list = safe(function () { return speechSynthesis.getVoices(); }, []) || [];
+        if (list.length > 0 || tries >= 20) {
+          resolve(list.map(function (v) {
+            return { voiceURI: v.voiceURI, name: v.name, lang: v.lang,
+                     localService: v.localService, "default": v["default"] };
+          }));
+          return;
+        }
+        tries++;
+        setTimeout(read, 250);
+      }
+      try { speechSynthesis.onvoiceschanged = function () { tries = Math.max(tries, 19); }; } catch (e) {}
+      read();
+    });
+  }
+
+  /* ---------- Rendering ---------- */
+  function renderSummary() {
+    var s = result.screen, w = result.webgl || {}, ch = result.clientHints, v = result.voices;
+    var high = ch && ch.high ? ch.high : null;
+    $("sm-model").textContent = high && high.model ? high.model : "не видно — укажите ниже";
+    $("sm-android").textContent = high && high.platformVersion ? high.platformVersion : "—";
+    $("sm-gpu").textContent = w.UnmaskedRenderer || w.Renderer || "—";
+    $("sm-screen").textContent = s.width + " × " + s.height + " при DPR " + s.devicePixelRatio;
+    $("sm-window").textContent = s.innerWidth + " × " + s.innerHeight + (s.framed ? " (внутри рамки)" : "");
+    $("sm-voices").textContent = v ? (v.length + (v.length ? " — первый: " + v[0].name : "")) : "нет API";
+  }
+
+  function jsonText() {
+    result.modelNote = $("modelNote").value.trim();
+    return JSON.stringify(result, null, 2);
+  }
+
+  function refreshRaw() { $("raw").value = jsonText(); }
+
+  function fileName() {
+    var base = (result.modelNote ||
+                (result.clientHints && result.clientHints.high && result.clientHints.high.model) ||
+                (result.webgl && result.webgl.UnmaskedRenderer) || "phone");
+    base = base.replace(/[^A-Za-z0-9А-Яа-яЁё._-]+/g, "_").slice(0, 40);
+    return "snapshot_" + base + ".json";
+  }
+
+  function status(text, cls) {
+    var el = $("status");
+    el.textContent = text;
+    el.className = "status" + (cls ? " " + cls : "");
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  function legacyCopy(text) {
+    try {
+      var ta = $("raw");
+      ta.value = text;
+      $("rawBox").open = true;
+      ta.focus();
+      ta.select();
+      return document.execCommand("copy");
+    } catch (e) { return false; }
+  }
+
+  $("btnCopy").addEventListener("click", function () {
+    var text = jsonText();
+    refreshRaw();
+    copyText(text).then(function (ok) {
+      if (ok) status("Скопировано. Вставьте в сообщение и отправьте.", "ok");
+      else {
+        $("rawBox").open = true;
+        status("Не удалось скопировать автоматически. Выделите текст ниже и скопируйте вручную.", "bad");
+      }
+    });
+  });
+
+  $("btnShare").addEventListener("click", function () {
+    var text = jsonText();
+    refreshRaw();
+    var file = null;
+    try { file = new File([text], fileName(), { type: "application/json" }); } catch (e) {}
+
+    var tryFile = file && navigator.canShare && safe(function () { return navigator.canShare({ files: [file] }); }, false);
+    var sharePromise;
+    if (tryFile) {
+      sharePromise = navigator.share({ files: [file], title: "Снимок телефона" });
+    } else if (navigator.share) {
+      sharePromise = navigator.share({ title: "Снимок телефона", text: text });
+    } else {
+      sharePromise = Promise.reject({ name: "NoShare" });
+    }
+
+    sharePromise.then(function () {
+      status("Отправлено.", "ok");
+    }, function (err) {
+      if (err && err.name === "AbortError") { status(""); return; }
+      copyText(text).then(function (ok) {
+        if (ok) status("Отправка недоступна здесь, поэтому результат скопирован. Вставьте его в сообщение.", "ok");
+        else {
+          $("rawBox").open = true;
+          status("Отправка недоступна. Выделите текст ниже и скопируйте вручную.", "bad");
+        }
+      });
+    });
+  });
+
+  $("modelNote").addEventListener("input", function () { if (result) refreshRaw(); });
+
+  /* ---------- Run ---------- */
+  function run() {
+    result = {
+      snapshotVersion: 1,
+      capturedAt: new Date().toISOString(),
+      modelNote: ""
+    };
+
+    result.screen = safe(collectScreen, null);
+    $("tapeLabel").textContent = window.innerWidth + " px";
+    setStep("st-screen", result.screen ? "готово" : "ошибка", result.screen ? "ok" : "bad");
+
+    result.navigator = safe(collectNavigator, null);
+    result.audio = safe(collectAudio, null);
+
+    var gl = safe(collectWebGL, { gl1: false, gl2: false, data: null });
+    result.webgl = gl.data;
+    setStep("st-gl1", gl.gl1 ? "готово" : "нет", gl.gl1 ? "ok" : "bad");
+    setStep("st-gl2", gl.gl2 ? "готово" : "нет", gl.gl2 ? "ok" : "bad");
+
+    setStep("st-ch", "читаю", "");
+    setStep("st-voices", "загружаю", "");
+
+    Promise.all([collectClientHints(), collectVoices()]).then(function (parts) {
+      result.clientHints = parts[0];
+      result.voices = parts[1];
+
+      var high = parts[0] && parts[0].high;
+      setStep("st-ch", high && high.model ? "готово" : (parts[0] ? "без модели" : "нет API"),
+              high && high.model ? "ok" : "");
+      setStep("st-voices", parts[1] ? (parts[1].length + " шт.") : "нет API",
+              parts[1] && parts[1].length ? "ok" : "");
+
+      renderSummary();
+      refreshRaw();
+      $("btnShare").disabled = false;
+      $("btnCopy").disabled = false;
+      status("Снимок готов. Нажмите «Отправить результат».", "ok");
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
+  else run();
+})();
+</script>
+</body>
+</html>
