@@ -705,6 +705,65 @@
     $("tapTarget").addEventListener(type, recordTap, { passive: true });
   });
 
+  /* Нажатия по всей странице — чтобы видеть промахи мимо рамки */
+  var pageEvents = [];
+
+  function describeTarget(t) {
+    if (!t || !t.tagName) return "?";
+    return t.tagName.toLowerCase() + (t.id ? "#" + t.id : "");
+  }
+
+  function pointOf(e) {
+    var p = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e;
+    return { x: Math.round(p.clientX || 0), y: Math.round(p.clientY || 0) };
+  }
+
+  function recordPageEvent(e) {
+    if (!result) return;
+    var pt = pointOf(e);
+    pageEvents.push({
+      type: e.type,
+      trusted: e.isTrusted,
+      pointerType: e.pointerType === undefined ? null : e.pointerType,
+      x: pt.x,
+      y: pt.y,
+      target: describeTarget(e.target)
+    });
+    if (pageEvents.length > 30) pageEvents.shift();
+    result.pageEvents = pageEvents.slice();
+
+    var r = $("tapTarget").getBoundingClientRect();
+    result.tapTargetRect = {
+      left: Math.round(r.left), top: Math.round(r.top),
+      right: Math.round(r.right), bottom: Math.round(r.bottom),
+      scrollY: Math.round(window.scrollY)
+    };
+
+    if (e.type === "click" && describeTarget(e.target) !== "button#tapTarget") {
+      var el = $("tapLog");
+      el.textContent = "Промах: " + e.type + (e.pointerType ? "(" + e.pointerType + ")" : "") +
+        " isTrusted=" + (e.isTrusted ? "да" : "НЕТ") +
+        " в точке " + pt.x + "," + pt.y + " по " + describeTarget(e.target) +
+        " | рамка: " + result.tapTargetRect.left + "," + result.tapTargetRect.top +
+        "–" + result.tapTargetRect.right + "," + result.tapTargetRect.bottom +
+        " | окно " + window.innerWidth + "x" + window.innerHeight + " scrollY=" + result.tapTargetRect.scrollY;
+      el.className = "tap-log bad";
+    }
+  }
+
+  ["pointerdown", "touchstart", "mousedown", "click"].forEach(function (type) {
+    document.addEventListener(type, recordPageEvent, { capture: true, passive: true });
+  });
+
+  /* Для отладки из Zenno: сводка без клика */
+  window.__zpTapDebug = function () {
+    var r = $("tapTarget").getBoundingClientRect();
+    return "событий на странице: " + pageEvents.length +
+      (pageEvents.length ? " | последнее: " + JSON.stringify(pageEvents[pageEvents.length - 1]) : "") +
+      " | рамка: " + Math.round(r.left) + "," + Math.round(r.top) + "–" + Math.round(r.right) + "," + Math.round(r.bottom) +
+      " | окно " + window.innerWidth + "x" + window.innerHeight + " scrollY=" + Math.round(window.scrollY);
+  };
+
   /* ---------- Run ---------- */
   function run() {
     result = {
