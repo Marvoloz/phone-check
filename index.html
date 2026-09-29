@@ -262,6 +262,7 @@
     <li><span>Видеокарта, WebGL 2</span><span class="state" id="st-gl2">жду</span></li>
     <li><span>Модель и версия Android</span><span class="state" id="st-ch">жду</span></li>
     <li><span>Голоса синтеза речи</span><span class="state" id="st-voices">жду</span></li>
+    <li><span>Шрифты</span><span class="state" id="st-fonts">жду</span></li>
   </ul>
 
   <dl class="summary" id="summary">
@@ -271,6 +272,7 @@
     <dt>Экран</dt><dd id="sm-screen">—</dd>
     <dt>Окно</dt><dd id="sm-window">—</dd>
     <dt>Голоса</dt><dd id="sm-voices">—</dd>
+    <dt>Шрифты</dt><dd id="sm-fonts">—</dd>
   </dl>
 
   <section class="tap" aria-labelledby="tapTitle">
@@ -541,6 +543,48 @@
     });
   }
 
+  /* ---------- Fonts (как проверяют сайты: ширина текста против базовых шрифтов) ---------- */
+  var FONT_CANDIDATES = [
+    // Windows
+    "Arial", "Arial Black", "Bahnschrift", "Calibri", "Cambria", "Cambria Math", "Candara", "Comic Sans MS",
+    "Consolas", "Constantia", "Corbel", "Courier New", "Ebrima", "Franklin Gothic Medium", "Gabriola", "Gadugi",
+    "Georgia", "Impact", "Ink Free", "Javanese Text", "Leelawadee UI", "Lucida Console", "Lucida Sans Unicode",
+    "Malgun Gothic", "Marlett", "Microsoft Himalaya", "Microsoft JhengHei", "Microsoft Sans Serif", "Microsoft YaHei",
+    "Mongolian Baiti", "MS Gothic", "MV Boli", "Myanmar Text", "Nirmala UI", "Palatino Linotype", "Segoe MDL2 Assets",
+    "Segoe Print", "Segoe Script", "Segoe UI", "Segoe UI Emoji", "Segoe UI Symbol", "SimSun", "Sitka Text", "Sylfaen",
+    "Symbol", "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana", "Webdings", "Wingdings", "Yu Gothic",
+    // Android / Google
+    "Roboto", "Roboto Condensed", "Roboto Mono", "Noto Sans", "Noto Serif", "Noto Sans Mono", "Noto Color Emoji",
+    "Droid Sans", "Droid Sans Mono", "Droid Serif", "Cutive Mono", "Coming Soon", "Dancing Script",
+    "Carrois Gothic SC", "Google Sans", "Product Sans", "Source Sans Pro",
+    // Производители телефонов
+    "SamsungOne", "Samsung Sans", "SEC Roboto Light", "MiSans", "Mi Lan Pro", "HarmonyOS Sans", "HONOR Sans",
+    "OPPO Sans", "OnePlus Sans", "vivo Sans", "Transsion Sans",
+    // Apple / Linux
+    "Helvetica Neue", "Apple Color Emoji", "DejaVu Sans", "Liberation Sans", "Ubuntu"
+  ];
+
+  function collectFonts() {
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    var text = "mmmmmmmmmmlli1WЖжЯя@#&";
+    var bases = ["monospace", "sans-serif", "serif"];
+    var baseWidth = {};
+    bases.forEach(function (b) {
+      ctx.font = "72px " + b;
+      baseWidth[b] = ctx.measureText(text).width;
+    });
+    var found = [];
+    FONT_CANDIDATES.forEach(function (font) {
+      for (var i = 0; i < bases.length; i++) {
+        ctx.font = "72px '" + font + "', " + bases[i];
+        if (ctx.measureText(text).width !== baseWidth[bases[i]]) { found.push(font); break; }
+      }
+    });
+    return { checked: FONT_CANDIDATES.length, detected: found };
+  }
+
   /* ---------- Rendering ---------- */
   var packedText = null;   // сжатый результат для копирования, готовится заранее
 
@@ -553,6 +597,8 @@
     $("sm-screen").textContent = s.width + " × " + s.height + " при DPR " + s.devicePixelRatio;
     $("sm-window").textContent = s.innerWidth + " × " + s.innerHeight + (s.framed ? " (внутри рамки)" : "");
     $("sm-voices").textContent = v ? (v.length + (v.length ? " — первый: " + v[0].name : "")) : "нет API";
+    var f = result.fonts;
+    $("sm-fonts").textContent = f ? (f.detected.length + " из " + f.checked + (f.detected.length ? ": " + f.detected.slice(0, 8).join(", ") + (f.detected.length > 8 ? "…" : "") : "")) : "—";
   }
 
   function jsonText() { return JSON.stringify(result, null, 2); }
@@ -782,6 +828,9 @@
     result.webgl = gl.data;
     setStep("st-gl1", gl.gl1 ? "готово" : "нет", gl.gl1 ? "ok" : "bad");
     setStep("st-gl2", gl.gl2 ? "готово" : "нет", gl.gl2 ? "ok" : "bad");
+
+    result.fonts = safe(collectFonts, null);
+    setStep("st-fonts", result.fonts ? (result.fonts.detected.length + " шт.") : "ошибка", result.fonts ? "ok" : "bad");
 
     setStep("st-ch", "читаю", "");
     setStep("st-voices", "загружаю", "");
