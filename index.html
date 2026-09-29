@@ -159,6 +159,34 @@
     margin: 0 0 1.5rem;
   }
 
+  .tap {
+    margin: 0 0 1.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  .tap h2 {
+    font-family: "Unbounded", "Onest", system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+  }
+  .tap-target {
+    display: block;
+    width: 100%;
+    min-height: 5rem;
+    border: 2px dashed var(--ink);
+    background: transparent;
+    font-size: 1.05rem;
+    touch-action: manipulation;
+  }
+  .tap-log {
+    margin: 0.6rem 0 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    overflow-wrap: anywhere;
+  }
+  .tap-log.ok { color: var(--ok); }
+  .tap-log.bad { color: var(--bad); }
   .actions {
     display: flex;
     flex-wrap: wrap;
@@ -244,6 +272,12 @@
     <dt>Окно</dt><dd id="sm-window">—</dd>
     <dt>Голоса</dt><dd id="sm-voices">—</dd>
   </dl>
+
+  <section class="tap" aria-labelledby="tapTitle">
+    <h2 id="tapTitle">Проверка касания</h2>
+    <button type="button" class="tap-target" id="tapTarget">Нажмите сюда пальцем</button>
+    <p class="tap-log" id="tapLog" aria-live="polite">Нажатий ещё не было. Нажмите на рамку перед тем, как сохранять или копировать результат.</p>
+  </section>
 
   <div class="actions">
     <button class="primary" id="btnSave" disabled>Сохранить файл</button>
@@ -618,6 +652,57 @@
       refreshRaw();
       status("Не удалось сохранить файл. Выделите текст ниже и скопируйте вручную.", "bad");
     }
+  });
+
+  /* ---------- Tap test ---------- */
+  var tapEvents = [];
+  var tapStart = 0;
+
+  function recordTap(e) {
+    if (!result) return;
+    if (e.type === "pointerdown" || (e.type === "touchstart" && tapEvents.length === 0)) {
+      if (e.type === "pointerdown") { tapEvents = []; tapStart = performance.now(); }
+    }
+    if (tapEvents.length === 0 && !tapStart) tapStart = performance.now();
+    tapEvents.push({
+      type: e.type,
+      trusted: e.isTrusted,
+      pointerType: e.pointerType === undefined ? null : e.pointerType,
+      ms: Math.round(performance.now() - tapStart)
+    });
+    if (e.type === "click") finishTap();
+  }
+
+  function finishTap() {
+    var seq = tapEvents.map(function (x) {
+      return x.type + (x.pointerType ? "(" + x.pointerType + ")" : "") + (x.trusted ? "" : "!");
+    }).join(" > ");
+    var allTrusted = tapEvents.every(function (x) { return x.trusted; });
+    var hasTouch = tapEvents.some(function (x) { return x.type === "touchstart"; });
+    var clickEv = tapEvents.filter(function (x) { return x.type === "click"; })[0] || {};
+    var entry = {
+      sequence: seq,
+      allTrusted: allTrusted,
+      touchEvents: hasTouch,
+      clickPointerType: clickEv.pointerType === undefined ? null : clickEv.pointerType,
+      events: tapEvents.slice(0, 20)
+    };
+    result.tapTests = (result.tapTests || []).concat([entry]).slice(-5);
+    tapEvents = [];
+    tapStart = 0;
+
+    var el = $("tapLog");
+    el.textContent = "Нажатие " + result.tapTests.length + ": " + seq +
+      " | isTrusted: " + (allTrusted ? "да" : "НЕТ") +
+      " | touch-события: " + (hasTouch ? "да" : "нет");
+    el.className = "tap-log " + (allTrusted && hasTouch ? "ok" : "bad");
+
+    refreshRaw();
+    packResult().then(function (packed) { packedText = packed; });
+  }
+
+  ["pointerdown", "pointerup", "touchstart", "touchend", "mousedown", "mouseup", "click"].forEach(function (type) {
+    $("tapTarget").addEventListener(type, recordTap, { passive: true });
   });
 
   /* ---------- Run ---------- */
