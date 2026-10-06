@@ -1,1425 +1,975 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <meta name="color-scheme" content="light dark">
-
-    <title>Phone Check — WebGL Diagnostics</title>
-
-    <style>
-        :root {
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                Arial,
-                sans-serif;
-
-            line-height: 1.45;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            padding: 20px;
-
-            background:
-                Canvas;
-
-            color:
-                CanvasText;
-        }
-
-        .page {
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            margin:
-                0
-                0
-                8px;
-
-            font-size:
-                clamp(
-                    24px,
-                    5vw,
-                    36px
-                );
-        }
-
-        .subtitle {
-            margin:
-                0
-                0
-                20px;
-
-            opacity: 0.75;
-        }
-
-        .card {
-            margin:
-                0
-                0
-                16px;
-
-            padding: 16px;
-
-            border:
-                1px solid
-                color-mix(
-                    in srgb,
-                    CanvasText 18%,
-                    transparent
-                );
-
-            border-radius: 12px;
-
-            background:
-                color-mix(
-                    in srgb,
-                    Canvas 96%,
-                    CanvasText 4%
-                );
-        }
-
-        .card h2 {
-            margin:
-                0
-                0
-                12px;
-
-            font-size: 20px;
-        }
-
-        .grid {
-            display: grid;
-
-            grid-template-columns:
-                repeat(
-                    auto-fit,
-                    minmax(
-                        260px,
-                        1fr
-                    )
-                );
-
-            gap: 12px;
-        }
-
-        .metric {
-            padding: 10px 12px;
-
-            border:
-                1px solid
-                color-mix(
-                    in srgb,
-                    CanvasText 12%,
-                    transparent
-                );
-
-            border-radius: 9px;
-        }
-
-        .metric-label {
-            display: block;
-
-            margin-bottom: 3px;
-
-            font-size: 12px;
-
-            opacity: 0.65;
-        }
-
-        .metric-value {
-            display: block;
-
-            word-break: break-word;
-
-            font-family:
-                ui-monospace,
-                SFMono-Regular,
-                Menlo,
-                Consolas,
-                monospace;
-
-            font-size: 13px;
-        }
-
-        .buttons {
-            display: flex;
-
-            flex-wrap: wrap;
-
-            gap: 10px;
-
-            margin-top: 14px;
-        }
-
-        button {
-            appearance: none;
-
-            padding: 10px 14px;
-
-            border:
-                1px solid
-                color-mix(
-                    in srgb,
-                    CanvasText 22%,
-                    transparent
-                );
-
-            border-radius: 9px;
-
-            background:
-                color-mix(
-                    in srgb,
-                    Canvas 88%,
-                    CanvasText 12%
-                );
-
-            color:
-                CanvasText;
-
-            font: inherit;
-
-            cursor: pointer;
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        .status {
-            min-height: 24px;
-
-            margin-top: 10px;
-
-            font-size: 14px;
-        }
-
-        details {
-            margin-top: 14px;
-        }
-
-        summary {
-            cursor: pointer;
-
-            font-weight: 600;
-        }
-
-        pre {
-            margin:
-                12px
-                0
-                0;
-
-            padding: 12px;
-
-            overflow: auto;
-
-            max-height: 650px;
-
-            white-space: pre-wrap;
-            word-break: break-word;
-
-            border-radius: 9px;
-
-            background:
-                color-mix(
-                    in srgb,
-                    Canvas 90%,
-                    CanvasText 10%
-                );
-
-            font-family:
-                ui-monospace,
-                SFMono-Regular,
-                Menlo,
-                Consolas,
-                monospace;
-
-            font-size: 12px;
-
-            line-height: 1.45;
-        }
-
-        .extensions {
-            columns:
-                2
-                300px;
-
-            column-gap: 28px;
-
-            margin-top: 12px;
-        }
-
-        .extension {
-            break-inside: avoid;
-
-            padding:
-                3px
-                0;
-
-            font-family:
-                ui-monospace,
-                SFMono-Regular,
-                Menlo,
-                Consolas,
-                monospace;
-
-            font-size: 12px;
-        }
-
-        .muted {
-            opacity: 0.65;
-        }
-
-        .ok {
-            font-weight: 600;
-        }
-
-        @media (max-width: 600px) {
-            body {
-                padding: 12px;
-            }
-
-            .card {
-                padding: 13px;
-            }
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Снимок телефона</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F7F7F2;
+    --ink: #24272C;
+    --ink-soft: #5B6069;
+    --line: #D4D6D9;
+    --tape: #F5C518;
+    --tape-ink: #24272C;
+    --ok: #2E7D4F;
+    --bad: #B42318;
+    --field: #FFFFFF;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1D1F23;
+      --ink: #ECEDEF;
+      --ink-soft: #A3A8B0;
+      --line: #3B3F46;
+      --tape: #F5C518;
+      --tape-ink: #1D1F23;
+      --ok: #5CC28A;
+      --bad: #F27A6B;
+      --field: #25282D;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1D1F23;
+    --ink: #ECEDEF;
+    --ink-soft: #A3A8B0;
+    --line: #3B3F46;
+    --tape: #F5C518;
+    --tape-ink: #1D1F23;
+    --ok: #5CC28A;
+    --bad: #F27A6B;
+    --field: #25282D;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Onest", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 1rem;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Measuring tape: ticks every 10 CSS px, the width is written on it */
+  .tape {
+    position: relative;
+    height: 3.25rem;
+    background-color: var(--tape);
+    background-image:
+      repeating-linear-gradient(to right, var(--tape-ink) 0 1px, transparent 1px 50px),
+      repeating-linear-gradient(to right, var(--tape-ink) 0 1px, transparent 1px 10px);
+    background-size: 100% 1.1rem, 100% 0.55rem;
+    background-repeat: no-repeat;
+    background-position: 0 0, 0 0;
+    color: var(--tape-ink);
+    overflow: hidden;
+  }
+  .tape-label {
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.45rem;
+    font-family: "Unbounded", "Onest", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  main {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+  }
+  h1 {
+    font-family: "Unbounded", "Onest", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.9rem, 8vw, 2.6rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin: 0.25rem 0 0.75rem;
+  }
+  .lead {
+    color: var(--ink-soft);
+    margin: 0 0 1.5rem;
+    max-width: 30rem;
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0 0 1.75rem;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .steps li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .steps .state {
+    font-weight: 500;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  .steps .state.ok { color: var(--ok); }
+  .steps .state.bad { color: var(--bad); }
+
+  .summary {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.35rem 1rem;
+    margin: 0 0 1.75rem;
+  }
+  .summary dt { color: var(--ink-soft); }
+  .summary dd {
+    margin: 0;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  label.field {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 0.7rem 0.8rem;
+    margin-bottom: 0.35rem;
+  }
+  .hint {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 1.5rem;
+  }
+
+  .tap {
+    margin: 0 0 1.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+  .tap h2 {
+    font-family: "Unbounded", "Onest", system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem;
+  }
+  .tap-target {
+    display: block;
+    width: 100%;
+    min-height: 5rem;
+    border: 2px dashed var(--ink);
+    background: transparent;
+    font-size: 1.05rem;
+    touch-action: manipulation;
+  }
+  .tap-log {
+    margin: 0.6rem 0 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    overflow-wrap: anywhere;
+  }
+  .tap-log.ok { color: var(--ok); }
+  .tap-log.bad { color: var(--bad); }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  button {
+    font: inherit;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    padding: 0.85rem 1.2rem;
+    cursor: pointer;
+    border: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+  button.primary {
+    background: var(--tape);
+    border-color: var(--tape);
+    color: var(--tape-ink);
+    flex: 1 1 12rem;
+  }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button:focus-visible, input:focus-visible, summary:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--tape);
+    outline-offset: 2px;
+  }
+  .status {
+    min-height: 1.5rem;
+    font-weight: 500;
+    margin: 0 0 1.5rem;
+  }
+  .status.ok { color: var(--ok); }
+  .status.bad { color: var(--bad); }
+
+  details {
+    border-top: 1px solid var(--line);
+    padding-top: 0.75rem;
+  }
+  summary { cursor: pointer; font-weight: 500; }
+  textarea {
+    width: 100%;
+    height: 16rem;
+    margin-top: 0.75rem;
+    font: 0.8rem/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--ink);
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 0.5rem;
+    padding: 0.6rem;
+    resize: vertical;
+  }
+  .note {
+    margin-top: 2rem;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .steps .state { transition: color 0.2s ease; }
+  }
+</style>
 </head>
-
 <body>
-<div class="page">
-    <h1>Phone Check</h1>
+<div class="tape" aria-hidden="true"><span class="tape-label" id="tapeLabel">… px</span></div>
 
-    <p class="subtitle">
-        WebGL1 / WebGL2 diagnostics for real-device ↔ Zenno comparison.
-    </p>
+<main>
+  <h1>Снимок телефона</h1>
+  <p class="lead">Страница снимает параметры браузера этого телефона: экран, видеокарту, шрифты и голоса синтеза речи. Сама она ничего никуда не отправляет — результат вы сохраняете или копируете кнопкой ниже.</p>
 
-    <section class="card">
-        <h2>Environment</h2>
+  <p id="captureWarning" role="alert" style="display:none; margin:0 0 1.25rem; padding:0.75rem 1rem; border:2px solid var(--bad); border-radius:0.5rem; background:var(--field); color:var(--bad); font-weight:600;"></p>
 
-        <div
-            id="environment-grid"
-            class="grid"
-        ></div>
-    </section>
+  <ul class="steps" aria-live="polite">
+    <li><span>Экран и окно</span><span class="state" id="st-screen">жду</span></li>
+    <li><span>Видеокарта, WebGL 1</span><span class="state" id="st-gl1">жду</span></li>
+    <li><span>Видеокарта, WebGL 2</span><span class="state" id="st-gl2">жду</span></li>
+    <li><span>Шрифты</span><span class="state" id="st-fonts">жду</span></li>
+    <li><span>Модель и версия Android</span><span class="state" id="st-ch">жду</span></li>
+    <li><span>Голоса синтеза речи</span><span class="state" id="st-voices">жду</span></li>
+  </ul>
 
+  <dl class="summary" id="summary">
+    <dt>Модель</dt><dd id="sm-model">—</dd>
+    <dt>Android</dt><dd id="sm-android">—</dd>
+    <dt>Видеокарта</dt><dd id="sm-gpu">—</dd>
+    <dt>Шрифты</dt><dd id="sm-fonts">—</dd>
+    <dt>Экран</dt><dd id="sm-screen">—</dd>
+    <dt>Окно</dt><dd id="sm-window">—</dd>
+    <dt>Голоса</dt><dd id="sm-voices">—</dd>
+  </dl>
 
-    <section class="card">
-        <h2>WebGL summary</h2>
+  <section class="tap" aria-labelledby="tapTitle">
+    <h2 id="tapTitle">Проверка касания</h2>
+    <button type="button" class="tap-target" id="tapTarget">Нажмите сюда пальцем</button>
+    <p class="tap-log" id="tapLog" aria-live="polite">Нажатий ещё не было. Нажмите на рамку перед тем, как сохранять или копировать результат.</p>
+  </section>
 
-        <div
-            id="webgl-summary"
-            class="grid"
-        >
-            Сбор данных...
-        </div>
+  <div class="actions">
+    <button class="primary" id="btnSave" disabled>Сохранить файл</button>
+    <button id="btnCopy" disabled>Скопировать одним сообщением</button>
+  </div>
+  <p class="status" id="status" role="status"></p>
 
-        <div class="buttons">
-            <button
-                id="copy-json"
-                type="button"
-            >
-                Скопировать WebGL JSON
-            </button>
+  <details id="rawBox">
+    <summary>Показать результат целиком</summary>
+    <textarea id="raw" readonly spellcheck="false" aria-label="Результат в формате JSON"></textarea>
+  </details>
 
-            <button
-                id="refresh"
-                type="button"
-            >
-                Переснять
-            </button>
-        </div>
-
-        <div
-            id="copy-status"
-            class="status"
-        ></div>
-    </section>
-
-
-    <section class="card">
-        <h2>WebGL1 extensions</h2>
-
-        <div
-            id="webgl1-meta"
-            class="muted"
-        ></div>
-
-        <div
-            id="webgl1-extensions"
-            class="extensions"
-        ></div>
-    </section>
-
-
-    <section class="card">
-        <h2>WebGL2 extensions</h2>
-
-        <div
-            id="webgl2-meta"
-            class="muted"
-        ></div>
-
-        <div
-            id="webgl2-extensions"
-            class="extensions"
-        ></div>
-    </section>
-
-
-    <section class="card">
-        <h2>Полный JSON</h2>
-
-        <details>
-            <summary>
-                Показать / скрыть
-            </summary>
-
-            <pre id="json-output"></pre>
-        </details>
-    </section>
-</div>
-
+  <p class="note">В результат не попадают ни IP-адрес, ни аккаунты, ни история — только технические параметры браузера. «Сохранить файл» кладёт результат в «Загрузки» — его можно приложить к сообщению. «Скопировать одним сообщением» копирует результат в сжатом виде: это одна строка из латинских букв и цифр, начинающаяся с SNAPSHOT1 — вставьте её в сообщение целиком.</p>
+</main>
 
 <script>
 (function () {
-    'use strict';
+  "use strict";
 
+  var result = null;
 
-    // =========================================================
-    // HELPERS
-    // =========================================================
+  function $(id) { return document.getElementById(id); }
 
-    function safe(fn, fallback) {
-        try {
-            return fn();
+  function setStep(id, text, cls) {
+    var el = $(id);
+    el.textContent = text;
+    el.className = "state" + (cls ? " " + cls : "");
+  }
+
+  function showCaptureWarning(text) {
+    var el = $("captureWarning");
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = "block";
+  }
+
+  function fmt(v) {
+    if (v === null || v === undefined) return null;
+    if (typeof v === "boolean") return v ? "True" : "False";
+    if (ArrayBuffer.isView(v) || Array.isArray(v)) return Array.prototype.slice.call(v).join(";");
+    return String(v);
+  }
+
+  function safe(fn, fallback) {
+    try { var v = fn(); return v === undefined ? fallback : v; } catch (e) { return fallback; }
+  }
+
+  function withTimeout(promise, ms) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var t = setTimeout(function () { if (!done) { done = true; resolve(null); } }, ms);
+      promise.then(function (v) { if (!done) { done = true; clearTimeout(t); resolve(v); } },
+                   function () { if (!done) { done = true; clearTimeout(t); resolve(null); } });
+    });
+  }
+
+  /* ---------- Screen and window ---------- */
+  function collectScreen() {
+    var s = window.screen || {};
+    var vv = window.visualViewport;
+    var framed = safe(function () { return window.self !== window.top; }, true);
+    return {
+      width: s.width, height: s.height,
+      availWidth: s.availWidth, availHeight: s.availHeight,
+      availTop: s.availTop, availLeft: s.availLeft,
+      colorDepth: s.colorDepth, pixelDepth: s.pixelDepth,
+      orientationType: safe(function () { return s.orientation.type; }, null),
+      orientationAngle: safe(function () { return s.orientation.angle; }, null),
+      devicePixelRatio: window.devicePixelRatio,
+      innerWidth: window.innerWidth, innerHeight: window.innerHeight,
+      outerWidth: window.outerWidth, outerHeight: window.outerHeight,
+      visualViewportWidth: vv ? vv.width : null,
+      visualViewportHeight: vv ? vv.height : null,
+      visualViewportScale: vv ? vv.scale : null,
+      scrollY: safe(function () { return Math.round(window.scrollY || window.pageYOffset || 0); }, null),
+      clientWidth: document.documentElement.clientWidth,
+      clientHeight: document.documentElement.clientHeight,
+      framed: framed,
+      pointerCoarse: safe(function () { return matchMedia("(pointer: coarse)").matches; }, null),
+      hoverNone: safe(function () { return matchMedia("(hover: none)").matches; }, null),
+      anyPointerFine: safe(function () { return matchMedia("(any-pointer: fine)").matches; }, null)
+    };
+  }
+
+  /* ---------- Capture cleanliness (screen geometry only) ----------
+     Для модели экрана нужен innerHeight в начальном состоянии:
+     страница не проскроллена и адресная строка видна. Если в момент
+     снятия был скролл или адресная строка свёрнута, innerHeight завышен
+     и снимок не сойдётся с остальными. Эти факты кладём в снимок и,
+     если замер нечистый, показываем предупреждение на странице. */
+  function assessCapture(s) {
+    if (!s) return null;
+    var scrolled = (s.scrollY !== null && s.scrollY > 1);
+    // Свёрнутая адресная строка: визуальный вьюпорт заметно выше innerHeight.
+    // В чистом состоянии они совпадают (разница в доли пикселя).
+    var vvGap = (s.visualViewportHeight !== null && s.innerHeight)
+      ? Math.round(s.visualViewportHeight - s.innerHeight)
+      : null;
+    var addressBarHidden = (vvGap !== null && vvGap > 2);
+    var framed = !!s.framed;
+    var clean = !scrolled && !addressBarHidden && !framed;
+    return {
+      clean: clean,
+      scrolled: scrolled,
+      scrollY: s.scrollY,
+      addressBarHidden: addressBarHidden,
+      visualViewportGap: vvGap,
+      framed: framed
+    };
+  }
+
+  /* ---------- Navigator, locale, network, audio ---------- */
+  function collectNavigator() {
+    var n = navigator;
+    var c = n.connection || {};
+    var ro = safe(function () { return Intl.DateTimeFormat().resolvedOptions(); }, {});
+    return {
+      userAgent: n.userAgent,
+      platform: n.platform,
+      vendor: n.vendor,
+      hardwareConcurrency: n.hardwareConcurrency,
+      deviceMemory: n.deviceMemory === undefined ? null : n.deviceMemory,
+      maxTouchPoints: n.maxTouchPoints,
+      language: n.language,
+      languages: safe(function () { return Array.prototype.slice.call(n.languages); }, null),
+      pdfViewerEnabled: n.pdfViewerEnabled === undefined ? null : n.pdfViewerEnabled,
+      plugins: safe(function () { return n.plugins.length; }, null),
+      mimeTypes: safe(function () { return n.mimeTypes.length; }, null),
+      intlLocale: ro.locale || null,
+      timeZone: ro.timeZone || null,
+      hourCycle: safe(function () { return new Intl.DateTimeFormat(undefined, { hour: "numeric" }).resolvedOptions().hourCycle; }, null),
+      localeString: safe(function () { return new Date(2026, 0, 31, 13, 5, 7).toLocaleString(); }, null),
+      connection: {
+        type: c.type === undefined ? null : c.type,
+        effectiveType: c.effectiveType === undefined ? null : c.effectiveType,
+        rtt: c.rtt === undefined ? null : c.rtt,
+        downlink: c.downlink === undefined ? null : c.downlink,
+        downlinkMax: c.downlinkMax === undefined ? null : String(c.downlinkMax),
+        saveData: c.saveData === undefined ? null : c.saveData
+      }
+    };
+  }
+
+  function collectAudio() {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    try {
+      var ctx = new Ctx();
+      var a = {
+        sampleRate: ctx.sampleRate,
+        baseLatency: ctx.baseLatency === undefined ? null : ctx.baseLatency,
+        maxChannelCount: ctx.destination.maxChannelCount,
+        state: ctx.state
+      };
+      if (ctx.close) ctx.close();
+      return a;
+    } catch (e) { return null; }
+  }
+
+  /* ---------- WebGL, field names as in the Zenno WebGL block ---------- */
+  var GL1_FIELDS = {
+    Renderer: "RENDERER", Vendor: "VENDOR", Version: "VERSION",
+    ShadingLanguageVersion: "SHADING_LANGUAGE_VERSION",
+    AliasedLineWidthRange: "ALIASED_LINE_WIDTH_RANGE", AliasedPointSizeRange: "ALIASED_POINT_SIZE_RANGE",
+    DepthBits: "DEPTH_BITS", MaxCombinedTextureImageUnits: "MAX_COMBINED_TEXTURE_IMAGE_UNITS",
+    MaxCubeMapTextureSize: "MAX_CUBE_MAP_TEXTURE_SIZE", MaxFragmentUniformVectors: "MAX_FRAGMENT_UNIFORM_VECTORS",
+    MaxRenderBufferSize: "MAX_RENDERBUFFER_SIZE", MaxTextureImageUnits: "MAX_TEXTURE_IMAGE_UNITS",
+    MaxTextureSize: "MAX_TEXTURE_SIZE", MaxVaryingVectors: "MAX_VARYING_VECTORS",
+    MaxVertexAttribs: "MAX_VERTEX_ATTRIBS", MaxVertexTextureImageUnits: "MAX_VERTEX_TEXTURE_IMAGE_UNITS",
+    MaxVertexUniformVectors: "MAX_VERTEX_UNIFORM_VECTORS", MaxViewportDims: "MAX_VIEWPORT_DIMS",
+    SampleBuffers: "SAMPLE_BUFFERS", Samples: "SAMPLES",
+    StencilBackValueMask: "STENCIL_BACK_VALUE_MASK", StencilBackWriteMask: "STENCIL_BACK_WRITEMASK",
+    StencilValueMask: "STENCIL_VALUE_MASK", StencilWriteMask: "STENCIL_WRITEMASK",
+    SubpixelBits: "SUBPIXEL_BITS", RedBits: "RED_BITS", GreenBits: "GREEN_BITS",
+    BlueBits: "BLUE_BITS", AlphaBits: "ALPHA_BITS", StencilBits: "STENCIL_BITS"
+  };
+
+  var GL2_FIELDS = {
+    MaxClientWaitTimeoutWebgl: "MAX_CLIENT_WAIT_TIMEOUT_WEBGL",
+    MaxCombinedFragmentUniformComponents: "MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS",
+    MaxCombinedUniformBlocks: "MAX_COMBINED_UNIFORM_BLOCKS",
+    MaxCombinedVertexUniformComponents: "MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS",
+    MaxElementIndex: "MAX_ELEMENT_INDEX", MaxFragmentInputComponents: "MAX_FRAGMENT_INPUT_COMPONENTS",
+    MaxFragmentUniformBlocks: "MAX_FRAGMENT_UNIFORM_BLOCKS",
+    MaxFragmentUniformComponents: "MAX_FRAGMENT_UNIFORM_COMPONENTS",
+    MaxSamples: "MAX_SAMPLES", MaxServerWaitTimeout: "MAX_SERVER_WAIT_TIMEOUT",
+    MaxTextureLodBias: "MAX_TEXTURE_LOD_BIAS",
+    MaxTransformFeedbackInterleavedComponents: "MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS",
+    MaxTransformFeedbackSeparateComponents: "MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS",
+    MaxUniformBufferBindings: "MAX_UNIFORM_BUFFER_BINDINGS", MaxVaryingComponents: "MAX_VARYING_COMPONENTS",
+    MaxVertexOutputComponents: "MAX_VERTEX_OUTPUT_COMPONENTS", MaxVertexUniformBlocks: "MAX_VERTEX_UNIFORM_BLOCKS",
+    MaxVertexUniformComponents: "MAX_VERTEX_UNIFORM_COMPONENTS",
+    UniformBufferOffsetAlignment: "UNIFORM_BUFFER_OFFSET_ALIGNMENT",
+    MaxElementsIndices: "MAX_ELEMENTS_INDICES", MaxElementsVertices: "MAX_ELEMENTS_VERTICES",
+    MaxProgramTexelOffset: "MAX_PROGRAM_TEXEL_OFFSET",
+    MaxTransformFeedbackSeparateAttribs: "MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS",
+    MinProgramTexelOffset: "MIN_PROGRAM_TEXEL_OFFSET", Max3DTextureSize: "MAX_3D_TEXTURE_SIZE",
+    MaxArrayTextureLayers: "MAX_ARRAY_TEXTURE_LAYERS", MaxUniformBlockSize: "MAX_UNIFORM_BLOCK_SIZE",
+    Version2: "VERSION", ShadingLanguageVersion2: "SHADING_LANGUAGE_VERSION"
+  };
+
+  function getCtx(type) {
+    try {
+      var canvas = document.createElement("canvas");
+      return canvas.getContext(type);
+    } catch (e) { return null; }
+  }
+
+  function readFields(gl, map, target) {
+    Object.keys(map).forEach(function (field) {
+      target[field] = safe(function () { return fmt(gl.getParameter(gl[map[field]])); }, null);
+    });
+  }
+
+  function shaderParams(gl) {
+    var out = {};
+    ["VERTEX_SHADER", "FRAGMENT_SHADER"].forEach(function (shader) {
+      ["LOW_FLOAT", "MEDIUM_FLOAT", "HIGH_FLOAT", "LOW_INT", "MEDIUM_INT", "HIGH_INT"].forEach(function (prec) {
+        out[shader + "." + prec] = safe(function () {
+          var f = gl.getShaderPrecisionFormat(gl[shader], gl[prec]);
+          return f.rangeMin + ";" + f.rangeMax + ";" + f.precision;
+        }, null);
+      });
+    });
+    return out;
+  }
+
+  function collectWebGL() {
+    var gl = getCtx("webgl") || getCtx("experimental-webgl");
+    var gl2 = getCtx("webgl2");
+    var w = { contextsTried: {} };
+
+    w.contextsTried.webgl = !!getCtx("webgl");
+    w.contextsTried["experimental-webgl"] = !!getCtx("experimental-webgl");
+    w.contextsTried.webgl2 = !!gl2;
+    w.AvaliableContexts = Object.keys(w.contextsTried).filter(function (k) { return w.contextsTried[k]; });
+
+    if (gl) {
+      readFields(gl, GL1_FIELDS, w);
+      var dbg = safe(function () { return gl.getExtension("WEBGL_debug_renderer_info"); }, null);
+      w.UnmaskedRenderer = dbg ? safe(function () { return fmt(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)); }, null) : null;
+      w.UnmaskedVendor = dbg ? safe(function () { return fmt(gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL)); }, null) : null;
+      var aniso = safe(function () {
+        return gl.getExtension("EXT_texture_filter_anisotropic") ||
+               gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
+      }, null);
+      w.MaxAnisotropy = aniso ? safe(function () { return fmt(gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT)); }, null) : null;
+      w.Antialiasing = safe(function () { return fmt(gl.getContextAttributes().antialias); }, null);
+      w.AvaliableExtensions = safe(function () { return gl.getSupportedExtensions(); }, null);
+      w.ShadersParams = shaderParams(gl);
+    }
+    if (gl2) {
+      readFields(gl2, GL2_FIELDS, w);
+      w.AvaliableExtensions2 = safe(function () { return gl2.getSupportedExtensions(); }, null);
+      w.ShadersParams2 = shaderParams(gl2);
+    }
+    return { gl1: !!gl, gl2: !!gl2, data: w };
+  }
+
+  /* ---------- Client Hints ---------- */
+  function collectClientHints() {
+    var d = navigator.userAgentData;
+    if (!d) return Promise.resolve(null);
+    var low = {
+      brands: safe(function () { return d.brands.map(function (b) { return { brand: b.brand, version: b.version }; }); }, null),
+      mobile: d.mobile,
+      platform: d.platform
+    };
+    if (!d.getHighEntropyValues) return Promise.resolve({ low: low, high: null });
+    var hints = ["model", "platformVersion", "architecture", "bitness", "fullVersionList",
+                 "uaFullVersion", "formFactors", "wow64"];
+    return withTimeout(d.getHighEntropyValues(hints), 3000).then(function (high) {
+      return { low: low, high: high };
+    });
+  }
+
+  /* ---------- Speech voices (as in the Zenno SpeechVoice block) ---------- */
+  function collectVoices() {
+    if (!window.speechSynthesis) return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      var tries = 0;
+      function read() {
+        var list = safe(function () { return speechSynthesis.getVoices(); }, []) || [];
+        if (list.length > 0 || tries >= 20) {
+          resolve(list.map(function (v) {
+            return { voiceURI: v.voiceURI, name: v.name, lang: v.lang,
+                     localService: v.localService, "default": v["default"] };
+          }));
+          return;
         }
-        catch (e) {
-            return fallback;
-        }
+        tries++;
+        setTimeout(read, 250);
+      }
+      try { speechSynthesis.onvoiceschanged = function () { tries = Math.max(tries, 19); }; } catch (e) {}
+      read();
+    });
+  }
+
+  /* ---------- Rendering ---------- */
+  var packedText = null;   // сжатый результат для копирования, готовится заранее
+
+
+  /* ---------- Fonts ----------
+     Метод как у BrowserLeaks: размеры текста, набранного проверяемым шрифтом
+     с запасным, сравниваются с размерами чистого запасного шрифта. Если хотя бы
+     для одного из трёх запасных размеры отличаются — шрифт есть в системе.
+     Все замеры делаются за один проход вёрстки в скрытом блоке.
+     Имена Onest и Unbounded не проверяются: страница сама грузит их как веб-шрифты. */
+  var FONT_TEST = "mmmmmmmmmmlliWwQq0@&fiЖжЯ";
+  var FONT_SIZE = 72;
+  var GLYPH_SIZE = 100;
+  var FONT_BASES = ["monospace", "sans-serif", "serif"];
+  var FONT_GENERIC = ["default", "sans-serif", "serif", "monospace", "cursive", "fantasy", "system-ui", "math"];
+  var GLYPH_FAMILIES = ["default", "sans-serif", "serif", "monospace", "cursive", "fantasy"];
+  var FONT_CANDIDATES = {
+    android: ["Roboto", "Roboto Flex", "Roboto Condensed", "Roboto Mono", "Roboto Serif", "Roboto Static",
+      "Noto Sans", "Noto Serif", "Noto Sans Mono", "Noto Color Emoji", "Noto Sans CJK SC", "Noto Sans CJK JP",
+      "Noto Sans CJK KR", "Noto Serif CJK SC", "Noto Sans Symbols", "Noto Sans Symbols 2", "Noto Sans Math",
+      "Noto Naskh Arabic", "Noto Sans Arabic", "Noto Sans Hebrew", "Noto Sans Devanagari", "Noto Sans Bengali",
+      "Noto Sans Thai", "Noto Sans Armenian", "Noto Sans Georgian", "Noto Sans Ethiopic", "Noto Sans Khmer",
+      "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Malayalam", "Noto Sans Kannada", "Noto Sans Gujarati",
+      "Noto Sans Gurmukhi", "Noto Sans Sinhala", "Noto Sans Myanmar", "Noto Sans Lao",
+      "Droid Sans", "Droid Sans Mono", "Droid Serif", "Droid Sans Fallback", "Cutive Mono", "Coming Soon",
+      "Dancing Script", "Carrois Gothic SC", "Source Sans Pro", "Source Sans 3", "Google Sans", "Google Sans Text",
+      "Product Sans", "sans-serif-condensed", "sans-serif-light", "sans-serif-thin", "sans-serif-medium",
+      "sans-serif-black", "sans-serif-smallcaps", "sans-serif-condensed-light", "sans-serif-condensed-medium",
+      "serif-monospace", "casual", "source-sans-pro", "ITC Stone Serif", "goudy"],
+    oem: ["MiSans", "MiSans VF", "MiSansVF", "MiSans Latin", "MiSansLatinVF", "MiLanPro VF", "Mi Lan Pro VF",
+      "MiSerif", "SamsungOne", "Samsung Sans", "SamsungOneUI", "One UI Sans", "SEC Roboto Light",
+      "SamsungSharpSans", "OPPO Sans", "OPPOSans", "OPlusSans", "OPlus Sans", "OnePlus Sans", "OnePlusSans",
+      "HarmonyOS Sans", "HarmonyOS Sans SC", "HONOR Sans", "HONORSans", "HONOR Sans CN", "vivo Sans",
+      "vivoSans", "vivo Sans Global", "Transsion Sans", "XOS Sans", "HiOS Sans", "ZTE Sans"],
+    windows: ["Arial", "Arial Narrow", "Arial Black", "Bahnschrift", "Book Antiqua", "Calibri", "Cambria",
+      "Cambria Math", "Candara", "Comic Sans MS", "Consolas", "Constantia", "Corbel", "Courier New", "Ebrima",
+      "Franklin Gothic Medium", "Gabriola", "Gadugi", "Georgia", "Impact", "Ink Free", "Javanese Text",
+      "Leelawadee UI", "Lucida Console", "Lucida Sans Unicode", "Malgun Gothic", "Marlett", "Microsoft Himalaya",
+      "Microsoft JhengHei", "Microsoft Sans Serif", "Microsoft YaHei", "MS Gothic", "MS PGothic", "MV Boli",
+      "Myanmar Text", "Nirmala UI", "Palatino Linotype", "Segoe Print", "Segoe Script", "Segoe UI",
+      "Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI Variable Text", "SimSun", "Sitka Text", "Sylfaen", "Symbol",
+      "Tahoma", "Times New Roman", "Trebuchet MS", "Verdana", "Webdings", "Wingdings", "Yu Gothic",
+      "Century Gothic", "Garamond", "Monotype Corsiva"],
+    apple: ["Helvetica", "Helvetica Neue", "Times", "Courier", "Monaco", "Menlo", "Baskerville", "Palatino",
+      "Avenir", "Futura", "Gill Sans", "Optima", "SF Pro Text", "Apple Color Emoji", "PingFang SC", "Hiragino Sans"],
+    other: ["Montserrat", "Poppins", "Open Sans", "Lato", "Inter", "Source Han Sans CN", "Ubuntu", "DejaVu Sans",
+      "Liberation Sans", "Fira Sans", "PT Sans", "Nunito"]
+  };
+  var GLYPH_CODES = [0x20B9, 0x2581, 0x20BA, 0xA73D, 0xFFFD, 0x20B8, 0x05C6, 0x1E9E, 0x097F, 0xF003, 0x1CDA,
+    0x17DD, 0x23AE, 0x0D02, 0x0B82, 0x115A, 0x2425, 0x302E, 0xA830, 0x2B06, 0x21E4, 0x20BD, 0x2C7B, 0x20B0,
+    0xFBEE, 0xF810, 0xFFFF, 0x007F, 0x10A0, 0x1D790, 0x0700, 0x1950, 0x3095, 0x532D, 0x061C, 0x20E3, 0xFFF9,
+    0x0218, 0x058F, 0x08E4, 0x09B3, 0x1C50, 0x2619];
+
+  function fontFamilyCss(name) { return name === "default" ? "initial" : name; }
+  function quoteFont(name) { return "'" + name.replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'"; }
+  function cpLabel(cp) { var h = cp.toString(16).toUpperCase(); while (h.length < 4) h = "0" + h; return "U+" + h; }
+
+  function collectFonts() {
+    var box = document.createElement("div");
+    box.setAttribute("aria-hidden", "true");
+    box.style.cssText = "position:absolute;left:-99999px;top:0;visibility:hidden;pointer-events:none;";
+    var jobs = [];
+
+    function add(family, text, size) {
+      var el = document.createElement("span");
+      el.style.cssText = "display:inline-block;white-space:nowrap;font-size:" + size + "px;font-style:normal;" +
+        "font-weight:400;font-stretch:normal;font-variant:normal;letter-spacing:normal;word-spacing:normal;" +
+        "line-height:normal;text-transform:none;";
+      el.style.fontFamily = family;
+      el.textContent = text;
+      box.appendChild(el);
+      var job = { el: el };
+      jobs.push(job);
+      return job;
     }
 
+    var generic = {};
+    FONT_GENERIC.forEach(function (g) { generic[g] = add(fontFamilyCss(g), FONT_TEST, FONT_SIZE); });
 
-    function normalizeValue(value) {
-        try {
-            if (
-                value !== null &&
-                typeof value === 'object' &&
-                typeof value.length === 'number'
-            ) {
-                return Array.from(value);
-            }
-        }
-        catch (e) {
-        }
+    var bases = {};
+    FONT_BASES.forEach(function (b) { bases[b] = add(b, FONT_TEST, FONT_SIZE); });
 
-        return value;
+    var cand = [];
+    Object.keys(FONT_CANDIDATES).forEach(function (cat) {
+      FONT_CANDIDATES[cat].forEach(function (name) {
+        var c = { name: name, cat: cat, probes: {} };
+        FONT_BASES.forEach(function (b) { c.probes[b] = add(quoteFont(name) + ", " + b, FONT_TEST, FONT_SIZE); });
+        cand.push(c);
+      });
+    });
+
+    var glyphRows = GLYPH_CODES.map(function (cp) {
+      var row = { cp: cp, cells: {} };
+      GLYPH_FAMILIES.forEach(function (g) { row.cells[g] = add(fontFamilyCss(g), String.fromCodePoint(cp), GLYPH_SIZE); });
+      return row;
+    });
+
+    document.body.appendChild(box);
+    // Один проход вёрстки: сначала все элементы, потом все замеры.
+    jobs.forEach(function (j) {
+      j.w = j.el.offsetWidth;
+      j.h = j.el.offsetHeight;
+      var r = j.el.getBoundingClientRect();
+      j.rw = Math.round(r.width * 100) / 100;
+      j.rh = Math.round(r.height * 100) / 100;
+    });
+    document.body.removeChild(box);
+
+    function wh(j) { return j.w + "," + j.h; }
+
+    var genericOut = {};
+    FONT_GENERIC.forEach(function (g) { genericOut[g] = wh(generic[g]); });
+
+    // Какие базовые семейства совпадают между собой (например, default = sans-serif).
+    var genericGroups = {};
+    FONT_GENERIC.forEach(function (g) {
+      var k = genericOut[g];
+      (genericGroups[k] = genericGroups[k] || []).push(g);
+    });
+
+    var detected = cand.filter(function (c) {
+      return FONT_BASES.some(function (b) {
+        return c.probes[b].w !== bases[b].w || c.probes[b].h !== bases[b].h;
+      });
+    });
+
+    var groups = {};
+    detected.forEach(function (c) {
+      var k = wh(c.probes.monospace);
+      (groups[k] = groups[k] || []).push(c.name);
+    });
+
+    var byCat = {};
+    Object.keys(FONT_CANDIDATES).forEach(function (cat) { byCat[cat] = []; });
+    detected.forEach(function (c) { byCat[c.cat].push(c.name); });
+
+    var glyphs = {};
+    glyphRows.forEach(function (row) {
+      var cells = {};
+      GLYPH_FAMILIES.forEach(function (g) { cells[g] = row.cells[g].rw + "," + row.cells[g].rh; });
+      glyphs[cpLabel(row.cp)] = cells;
+    });
+
+    return {
+      version: 1,
+      testString: FONT_TEST,
+      sizePx: FONT_SIZE,
+      glyphSizePx: GLYPH_SIZE,
+      generic: genericOut,
+      genericGroups: Object.keys(genericGroups).map(function (k) { return { metrics: k, families: genericGroups[k] }; }),
+      candidates: cand.length,
+      detectedCount: detected.length,
+      detected: detected.map(function (c) { return c.name; }),
+      detectedByCategory: byCat,
+      groups: Object.keys(groups).map(function (k) { return { metrics: k, names: groups[k] }; }),
+      glyphs: glyphs
+    };
+  }
+
+  function renderSummary() {
+    var s = result.screen, w = result.webgl || {}, ch = result.clientHints, v = result.voices;
+    var high = ch && ch.high ? ch.high : null;
+    $("sm-model").textContent = high && high.model ? high.model : "не видно";
+    $("sm-android").textContent = high && high.platformVersion ? high.platformVersion : "—";
+    $("sm-gpu").textContent = w.UnmaskedRenderer || w.Renderer || "—";
+    var f = result.fonts;
+    $("sm-fonts").textContent = f
+      ? ("найдено " + f.detectedCount + " из " + f.candidates +
+         " · Android " + f.detectedByCategory.android.length +
+         " · оболочки " + f.detectedByCategory.oem.length +
+         " · Windows " + f.detectedByCategory.windows.length +
+         " · Apple " + f.detectedByCategory.apple.length)
+      : "ошибка";
+    $("sm-screen").textContent = s.width + " × " + s.height + " при DPR " + s.devicePixelRatio;
+    $("sm-window").textContent = s.innerWidth + " × " + s.innerHeight + (s.framed ? " (внутри рамки)" : "");
+    $("sm-voices").textContent = v ? (v.length + (v.length ? " — первый: " + v[0].name : "")) : "нет API";
+  }
+
+  function jsonText() { return JSON.stringify(result, null, 2); }
+
+  function refreshRaw() { $("raw").value = jsonText(); }
+
+  function fileName() {
+    var base = (result.clientHints && result.clientHints.high && result.clientHints.high.model) ||
+               (result.webgl && result.webgl.UnmaskedRenderer) || "phone";
+    base = base.replace(/[^A-Za-z0-9._-]+/g, "_").slice(0, 40);
+    return "snapshot_" + base + ".json";
+  }
+
+  function status(text, cls) {
+    var el = $("status");
+    el.textContent = text;
+    el.className = "status" + (cls ? " " + cls : "");
+  }
+
+  /* Компактный вариант для копирования: без пробелов, голоса — только сводка */
+  function compactText() {
+    var copy = JSON.parse(JSON.stringify(result));
+    if (Array.isArray(copy.voices)) {
+      copy.voices = {
+        count: copy.voices.length,
+        first: copy.voices.slice(0, 5).map(function (x) { return x.name + " | " + x.lang; })
+      };
+    }
+    copy.compact = true;
+    return JSON.stringify(copy);
+  }
+
+  /* gzip + base64 → одна строка SNAPSHOT1:... (около 3 тыс. символов) */
+  function packResult() {
+    var text = compactText();
+    if (!window.CompressionStream || !window.Response || !window.Blob) {
+      return Promise.resolve("SNAPSHOT0:" + text);
+    }
+    try {
+      var stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+      return new Response(stream).arrayBuffer().then(function (buf) {
+        var bytes = new Uint8Array(buf), bin = "";
+        for (var i = 0; i < bytes.length; i += 0x8000) {
+          bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+        }
+        return "SNAPSHOT1:" + btoa(bin);
+      }, function () { return "SNAPSHOT0:" + text; });
+    } catch (e) {
+      return Promise.resolve("SNAPSHOT0:" + text);
+    }
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  function legacyCopy(text) {
+    try {
+      var ta = $("raw");
+      ta.value = text;
+      $("rawBox").open = true;
+      ta.focus();
+      ta.select();
+      return document.execCommand("copy");
+    } catch (e) { return false; }
+  }
+
+  $("btnCopy").addEventListener("click", function () {
+    var text = packedText || ("SNAPSHOT0:" + compactText());
+    copyText(text).then(function (ok) {
+      if (ok) status("Скопировано (" + text.length + " символов). Вставьте в сообщение целиком и отправьте.", "ok");
+      else {
+        $("rawBox").open = true;
+        $("raw").value = text;
+        status("Не удалось скопировать автоматически. Выделите текст ниже и скопируйте вручную.", "bad");
+      }
+    });
+  });
+
+  $("btnSave").addEventListener("click", function () {
+    try {
+      var blob = new Blob([jsonText()], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = fileName();
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 10000);
+      status("Файл " + fileName() + " сохранён в «Загрузки». Приложите его к сообщению.", "ok");
+    } catch (e) {
+      $("rawBox").open = true;
+      refreshRaw();
+      status("Не удалось сохранить файл. Выделите текст ниже и скопируйте вручную.", "bad");
+    }
+  });
+
+  /* ---------- Tap test ---------- */
+  var tapEvents = [];
+  var tapStart = 0;
+
+  function recordTap(e) {
+    if (!result) return;
+    if (e.type === "pointerdown" || (e.type === "touchstart" && tapEvents.length === 0)) {
+      if (e.type === "pointerdown") { tapEvents = []; tapStart = performance.now(); }
+    }
+    if (tapEvents.length === 0 && !tapStart) tapStart = performance.now();
+    tapEvents.push({
+      type: e.type,
+      trusted: e.isTrusted,
+      pointerType: e.pointerType === undefined ? null : e.pointerType,
+      ms: Math.round(performance.now() - tapStart)
+    });
+    if (e.type === "click") finishTap();
+  }
+
+  function finishTap() {
+    var seq = tapEvents.map(function (x) {
+      return x.type + (x.pointerType ? "(" + x.pointerType + ")" : "") + (x.trusted ? "" : "!");
+    }).join(" > ");
+    var allTrusted = tapEvents.every(function (x) { return x.trusted; });
+    var hasTouch = tapEvents.some(function (x) { return x.type === "touchstart"; });
+    var clickEv = tapEvents.filter(function (x) { return x.type === "click"; })[0] || {};
+    var entry = {
+      sequence: seq,
+      allTrusted: allTrusted,
+      touchEvents: hasTouch,
+      clickPointerType: clickEv.pointerType === undefined ? null : clickEv.pointerType,
+      events: tapEvents.slice(0, 20)
+    };
+    result.tapTests = (result.tapTests || []).concat([entry]).slice(-5);
+    tapEvents = [];
+    tapStart = 0;
+
+    var el = $("tapLog");
+    el.textContent = "Нажатие " + result.tapTests.length + ": " + seq +
+      " | isTrusted: " + (allTrusted ? "да" : "НЕТ") +
+      " | touch-события: " + (hasTouch ? "да" : "нет");
+    el.className = "tap-log " + (allTrusted && hasTouch ? "ok" : "bad");
+
+    refreshRaw();
+    packResult().then(function (packed) { packedText = packed; });
+  }
+
+  ["pointerdown", "pointerup", "touchstart", "touchend", "mousedown", "mouseup", "click"].forEach(function (type) {
+    $("tapTarget").addEventListener(type, recordTap, { passive: true });
+  });
+
+  /* ---------- Run ---------- */
+  function run() {
+    result = {
+      snapshotVersion: 1,
+      capturedAt: new Date().toISOString()
+    };
+
+    result.screen = safe(collectScreen, null);
+    result.captureClean = safe(function () { return assessCapture(result.screen); }, null);
+    $("tapeLabel").textContent = window.innerWidth + " px";
+    setStep("st-screen", result.screen ? "готово" : "ошибка", result.screen ? "ok" : "bad");
+
+    if (result.captureClean && !result.captureClean.clean) {
+      var why = [];
+      if (result.captureClean.scrolled) why.push("страница проскроллена (scrollY " + result.captureClean.scrollY + ")");
+      if (result.captureClean.addressBarHidden) why.push("адресная строка свёрнута");
+      if (result.captureClean.framed) why.push("страница открыта внутри рамки");
+      showCaptureWarning(
+        "Замер экрана нечистый: " + why.join(", ") +
+        ". Закройте Chrome полностью, откройте страницу заново и не касайтесь экрана, пока снимок не будет готов."
+      );
     }
 
-
-    function safeGetParameter(gl, parameter) {
-        try {
-            return normalizeValue(
-                gl.getParameter(parameter)
-            );
-        }
-        catch (e) {
-            return null;
-        }
-    }
-
-
-    function metric(label, value) {
-        const item =
-            document.createElement('div');
-
-        item.className =
-            'metric';
-
-        const labelNode =
-            document.createElement('span');
-
-        labelNode.className =
-            'metric-label';
-
-        labelNode.textContent =
-            label;
-
-        const valueNode =
-            document.createElement('span');
-
-        valueNode.className =
-            'metric-value';
-
-        if (
-            Array.isArray(value)
-        ) {
-            valueNode.textContent =
-                value.join(' × ');
-        }
-        else {
-            valueNode.textContent =
-                value === null ||
-                typeof value === 'undefined'
-                    ? 'null'
-                    : String(value);
-        }
-
-        item.appendChild(
-            labelNode
-        );
-
-        item.appendChild(
-            valueNode
-        );
-
-        return item;
-    }
-
-
-    function renderMetricGrid(
-        element,
-        items
-    ) {
-        element.innerHTML = '';
-
-        for (
-            const item
-            of items
-        ) {
-            element.appendChild(
-                metric(
-                    item[0],
-                    item[1]
-                )
-            );
-        }
-    }
-
-
-    function renderExtensions(
-        element,
-        extensions
-    ) {
-        element.innerHTML = '';
-
-        if (
-            !extensions ||
-            extensions.length === 0
-        ) {
-            const empty =
-                document.createElement('div');
-
-            empty.className =
-                'muted';
-
-            empty.textContent =
-                '<NONE>';
-
-            element.appendChild(
-                empty
-            );
-
-            return;
-        }
-
-        for (
-            const extension
-            of extensions
-        ) {
-            const row =
-                document.createElement('div');
-
-            row.className =
-                'extension';
-
-            row.textContent =
-                extension;
-
-            element.appendChild(
-                row
-            );
-        }
-    }
-
-
-    // =========================================================
-    // WEBGL
-    // =========================================================
-
-    function collectWebGL(
-        contextName
-    ) {
-        const canvas =
-            document.createElement(
-                'canvas'
-            );
-
-        let gl = null;
-
-        try {
-            gl =
-                canvas.getContext(
-                    contextName
-                );
-        }
-        catch (e) {
-            return {
-                context:
-                    contextName,
-
-                available:
-                    false,
-
-                error:
-                    String(
-                        e &&
-                        e.message
-                            ? e.message
-                            : e
-                    )
-            };
-        }
-
-        if (!gl) {
-            return {
-                context:
-                    contextName,
-
-                available:
-                    false,
-
-                error:
-                    null
-            };
-        }
-
-
-        // -----------------------------------------------------
-        // EXTENSIONS
-        // -----------------------------------------------------
-
-        let extensions = [];
-
-        try {
-            extensions =
-                Array.from(
-                    gl.getSupportedExtensions() ||
-                    []
-                );
-
-            extensions.sort();
-        }
-        catch (e) {
-            extensions = [];
-        }
-
-
-        // -----------------------------------------------------
-        // DEBUG RENDERER
-        // -----------------------------------------------------
-
-        let unmaskedVendor = null;
-        let unmaskedRenderer = null;
-
-        try {
-            const debugInfo =
-                gl.getExtension(
-                    'WEBGL_debug_renderer_info'
-                );
-
-            if (debugInfo) {
-                unmaskedVendor =
-                    safeGetParameter(
-                        gl,
-                        debugInfo.UNMASKED_VENDOR_WEBGL
-                    );
-
-                unmaskedRenderer =
-                    safeGetParameter(
-                        gl,
-                        debugInfo.UNMASKED_RENDERER_WEBGL
-                    );
-            }
-        }
-        catch (e) {
-        }
-
-
-        // -----------------------------------------------------
-        // COMMON LIMITS
-        // -----------------------------------------------------
-
-        const limits = {
-            MAX_TEXTURE_SIZE:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_TEXTURE_SIZE
-                ),
-
-            MAX_CUBE_MAP_TEXTURE_SIZE:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_CUBE_MAP_TEXTURE_SIZE
-                ),
-
-            MAX_RENDERBUFFER_SIZE:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_RENDERBUFFER_SIZE
-                ),
-
-            MAX_VIEWPORT_DIMS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_VIEWPORT_DIMS
-                ),
-
-            MAX_VERTEX_ATTRIBS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_VERTEX_ATTRIBS
-                ),
-
-            MAX_TEXTURE_IMAGE_UNITS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_TEXTURE_IMAGE_UNITS
-                ),
-
-            MAX_VERTEX_TEXTURE_IMAGE_UNITS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS
-                ),
-
-            MAX_COMBINED_TEXTURE_IMAGE_UNITS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_COMBINED_TEXTURE_IMAGE_UNITS
-                ),
-
-            MAX_VERTEX_UNIFORM_VECTORS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_VERTEX_UNIFORM_VECTORS
-                ),
-
-            MAX_FRAGMENT_UNIFORM_VECTORS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_FRAGMENT_UNIFORM_VECTORS
-                ),
-
-            MAX_VARYING_VECTORS:
-                safeGetParameter(
-                    gl,
-                    gl.MAX_VARYING_VECTORS
-                )
-        };
-
-
-        // -----------------------------------------------------
-        // WEBGL2-SPECIFIC LIMITS
-        // -----------------------------------------------------
-
-        if (
-            contextName ===
-            'webgl2'
-        ) {
-            limits.MAX_3D_TEXTURE_SIZE =
-                safeGetParameter(
-                    gl,
-                    gl.MAX_3D_TEXTURE_SIZE
-                );
-
-            limits.MAX_ARRAY_TEXTURE_LAYERS =
-                safeGetParameter(
-                    gl,
-                    gl.MAX_ARRAY_TEXTURE_LAYERS
-                );
-
-            limits.MAX_UNIFORM_BUFFER_BINDINGS =
-                safeGetParameter(
-                    gl,
-                    gl.MAX_UNIFORM_BUFFER_BINDINGS
-                );
-
-            limits.MAX_UNIFORM_BLOCK_SIZE =
-                safeGetParameter(
-                    gl,
-                    gl.MAX_UNIFORM_BLOCK_SIZE
-                );
-
-            limits.MAX_SAMPLES =
-                safeGetParameter(
-                    gl,
-                    gl.MAX_SAMPLES
-                );
-        }
-
-
-        return {
-            context:
-                contextName,
-
-            available:
-                true,
-
-            vendor:
-                safeGetParameter(
-                    gl,
-                    gl.VENDOR
-                ),
-
-            renderer:
-                safeGetParameter(
-                    gl,
-                    gl.RENDERER
-                ),
-
-            unmaskedVendor:
-                unmaskedVendor,
-
-            unmaskedRenderer:
-                unmaskedRenderer,
-
-            version:
-                safeGetParameter(
-                    gl,
-                    gl.VERSION
-                ),
-
-            shadingLanguageVersion:
-                safeGetParameter(
-                    gl,
-                    gl.SHADING_LANGUAGE_VERSION
-                ),
-
-            limits:
-                limits,
-
-            extensionsCount:
-                extensions.length,
-
-            extensions:
-                extensions
-        };
-    }
-
-
-    // =========================================================
-    // ENVIRONMENT
-    // =========================================================
-
-    function collectEnvironment() {
-        const connection =
-            navigator.connection ||
-            navigator.mozConnection ||
-            navigator.webkitConnection ||
-            null;
-
-        return {
-            userAgent:
-                safe(
-                    () => navigator.userAgent,
-                    null
-                ),
-
-            platform:
-                safe(
-                    () => navigator.platform,
-                    null
-                ),
-
-            language:
-                safe(
-                    () => navigator.language,
-                    null
-                ),
-
-            hardwareConcurrency:
-                safe(
-                    () => navigator.hardwareConcurrency,
-                    null
-                ),
-
-            deviceMemory:
-                safe(
-                    () => navigator.deviceMemory,
-                    null
-                ),
-
-            maxTouchPoints:
-                safe(
-                    () => navigator.maxTouchPoints,
-                    null
-                ),
-
-            devicePixelRatio:
-                safe(
-                    () => window.devicePixelRatio,
-                    null
-                ),
-
-            screen:
-                {
-                    width:
-                        safe(
-                            () => screen.width,
-                            null
-                        ),
-
-                    height:
-                        safe(
-                            () => screen.height,
-                            null
-                        ),
-
-                    availWidth:
-                        safe(
-                            () => screen.availWidth,
-                            null
-                        ),
-
-                    availHeight:
-                        safe(
-                            () => screen.availHeight,
-                            null
-                        )
-                },
-
-            viewport:
-                {
-                    innerWidth:
-                        safe(
-                            () => window.innerWidth,
-                            null
-                        ),
-
-                    innerHeight:
-                        safe(
-                            () => window.innerHeight,
-                            null
-                        ),
-
-                    outerWidth:
-                        safe(
-                            () => window.outerWidth,
-                            null
-                        ),
-
-                    outerHeight:
-                        safe(
-                            () => window.outerHeight,
-                            null
-                        )
-                },
-
-            connection:
-                connection
-                    ? {
-                        type:
-                            safe(
-                                () => connection.type,
-                                null
-                            ),
-
-                        effectiveType:
-                            safe(
-                                () => connection.effectiveType,
-                                null
-                            ),
-
-                        rtt:
-                            safe(
-                                () => connection.rtt,
-                                null
-                            ),
-
-                        rttType:
-                            safe(
-                                () => typeof connection.rtt,
-                                null
-                            ),
-
-                        downlink:
-                            safe(
-                                () => connection.downlink,
-                                null
-                            ),
-
-                        downlinkMax:
-                            safe(
-                                () => connection.downlinkMax,
-                                null
-                            ),
-
-                        downlinkMaxType:
-                            safe(
-                                () => typeof connection.downlinkMax,
-                                null
-                            ),
-
-                        saveData:
-                            safe(
-                                () => connection.saveData,
-                                null
-                            ),
-
-                        saveDataType:
-                            safe(
-                                () => typeof connection.saveData,
-                                null
-                            )
-                    }
-                    : null
-        };
-    }
-
-
-    // =========================================================
-    // COLLECT + RENDER
-    // =========================================================
-
-    let currentResult = null;
-
-
-    function collectAll() {
-        const environment =
-            collectEnvironment();
-
-        const webgl1 =
-            collectWebGL(
-                'webgl'
-            );
-
-        const webgl2 =
-            collectWebGL(
-                'webgl2'
-            );
-
-        currentResult = {
-            timestamp:
-                new Date().toISOString(),
-
-            environment:
-                environment,
-
-            webgl1:
-                webgl1,
-
-            webgl2:
-                webgl2
-        };
-
-        window.__phoneCheckDiagnostics =
-            currentResult;
-
-        renderAll();
-    }
-
-
-    function renderAll() {
-        const env =
-            currentResult.environment;
-
-        renderMetricGrid(
-            document.getElementById(
-                'environment-grid'
-            ),
-            [
-                [
-                    'User-Agent',
-                    env.userAgent
-                ],
-                [
-                    'Platform',
-                    env.platform
-                ],
-                [
-                    'Language',
-                    env.language
-                ],
-                [
-                    'hardwareConcurrency',
-                    env.hardwareConcurrency
-                ],
-                [
-                    'deviceMemory',
-                    env.deviceMemory
-                ],
-                [
-                    'maxTouchPoints',
-                    env.maxTouchPoints
-                ],
-                [
-                    'devicePixelRatio',
-                    env.devicePixelRatio
-                ],
-                [
-                    'screen',
-                    [
-                        env.screen.width,
-                        env.screen.height
-                    ]
-                ],
-                [
-                    'screen.avail',
-                    [
-                        env.screen.availWidth,
-                        env.screen.availHeight
-                    ]
-                ],
-                [
-                    'inner',
-                    [
-                        env.viewport.innerWidth,
-                        env.viewport.innerHeight
-                    ]
-                ],
-                [
-                    'outer',
-                    [
-                        env.viewport.outerWidth,
-                        env.viewport.outerHeight
-                    ]
-                ],
-                [
-                    'connection.type',
-                    env.connection
-                        ? env.connection.type
-                        : null
-                ],
-                [
-                    'connection.effectiveType',
-                    env.connection
-                        ? env.connection.effectiveType
-                        : null
-                ],
-                [
-                    'connection.rtt',
-                    env.connection
-                        ? (
-                            String(
-                                env.connection.rtt
-                            ) +
-                            ' (' +
-                            env.connection.rttType +
-                            ')'
-                        )
-                        : null
-                ],
-                [
-                    'connection.downlink',
-                    env.connection
-                        ? env.connection.downlink
-                        : null
-                ],
-                [
-                    'connection.downlinkMax',
-                    env.connection
-                        ? (
-                            String(
-                                env.connection.downlinkMax
-                            ) +
-                            ' (' +
-                            env.connection.downlinkMaxType +
-                            ')'
-                        )
-                        : null
-                ],
-                [
-                    'connection.saveData',
-                    env.connection
-                        ? (
-                            String(
-                                env.connection.saveData
-                            ) +
-                            ' (' +
-                            env.connection.saveDataType +
-                            ')'
-                        )
-                        : null
-                ]
-            ]
-        );
-
-
-        // -----------------------------------------------------
-        // WebGL summary
-        // -----------------------------------------------------
-
-        const w1 =
-            currentResult.webgl1;
-
-        const w2 =
-            currentResult.webgl2;
-
-        renderMetricGrid(
-            document.getElementById(
-                'webgl-summary'
-            ),
-            [
-                [
-                    'WebGL1 available',
-                    w1.available
-                ],
-                [
-                    'WebGL1 extensions',
-                    w1.available
-                        ? w1.extensionsCount
-                        : null
-                ],
-                [
-                    'WebGL1 renderer',
-                    w1.available
-                        ? (
-                            w1.unmaskedRenderer ||
-                            w1.renderer
-                        )
-                        : null
-                ],
-                [
-                    'WebGL2 available',
-                    w2.available
-                ],
-                [
-                    'WebGL2 extensions',
-                    w2.available
-                        ? w2.extensionsCount
-                        : null
-                ],
-                [
-                    'WebGL2 renderer',
-                    w2.available
-                        ? (
-                            w2.unmaskedRenderer ||
-                            w2.renderer
-                        )
-                        : null
-                ]
-            ]
-        );
-
-
-        // -----------------------------------------------------
-        // WebGL1 extensions
-        // -----------------------------------------------------
-
-        document.getElementById(
-            'webgl1-meta'
-        ).textContent =
-            w1.available
-                ? (
-                    'count=' +
-                    w1.extensionsCount +
-                    ' | ' +
-                    String(
-                        w1.unmaskedRenderer ||
-                        w1.renderer ||
-                        ''
-                    )
-                )
-                : 'WebGL1 недоступен';
-
-        renderExtensions(
-            document.getElementById(
-                'webgl1-extensions'
-            ),
-            w1.extensions || []
-        );
-
-
-        // -----------------------------------------------------
-        // WebGL2 extensions
-        // -----------------------------------------------------
-
-        document.getElementById(
-            'webgl2-meta'
-        ).textContent =
-            w2.available
-                ? (
-                    'count=' +
-                    w2.extensionsCount +
-                    ' | ' +
-                    String(
-                        w2.unmaskedRenderer ||
-                        w2.renderer ||
-                        ''
-                    )
-                )
-                : 'WebGL2 недоступен';
-
-        renderExtensions(
-            document.getElementById(
-                'webgl2-extensions'
-            ),
-            w2.extensions || []
-        );
-
-
-        // -----------------------------------------------------
-        // JSON
-        // -----------------------------------------------------
-
-        document.getElementById(
-            'json-output'
-        ).textContent =
-            JSON.stringify(
-                currentResult,
-                null,
-                2
-            );
-    }
-
-
-    // =========================================================
-    // COPY
-    // =========================================================
-
-    async function copyJson() {
-        const status =
-            document.getElementById(
-                'copy-status'
-            );
-
-        const text =
-            JSON.stringify(
-                currentResult,
-                null,
-                2
-            );
-
-        try {
-            if (
-                navigator.clipboard &&
-                navigator.clipboard.writeText
-            ) {
-                await navigator.clipboard.writeText(
-                    text
-                );
-
-                status.textContent =
-                    '✓ JSON скопирован';
-
-                status.className =
-                    'status ok';
-
-                return;
-            }
-        }
-        catch (e) {
-        }
-
-
-        try {
-            const textarea =
-                document.createElement(
-                    'textarea'
-                );
-
-            textarea.value =
-                text;
-
-            textarea.setAttribute(
-                'readonly',
-                ''
-            );
-
-            textarea.style.position =
-                'fixed';
-
-            textarea.style.left =
-                '-9999px';
-
-            textarea.style.top =
-                '0';
-
-            document.body.appendChild(
-                textarea
-            );
-
-            textarea.focus();
-            textarea.select();
-
-            const copied =
-                document.execCommand(
-                    'copy'
-                );
-
-            textarea.remove();
-
-            if (!copied) {
-                throw new Error(
-                    'execCommand(copy) returned false'
-                );
-            }
-
-            status.textContent =
-                '✓ JSON скопирован';
-
-            status.className =
-                'status ok';
-        }
-        catch (e) {
-            status.textContent =
-                '✗ Автоматическое копирование не сработало. ' +
-                'Открой блок «Полный JSON» и скопируй его вручную.';
-
-            status.className =
-                'status';
-        }
-    }
-
-
-    // =========================================================
-    // EVENTS
-    // =========================================================
-
-    document.getElementById(
-        'copy-json'
-    ).addEventListener(
-        'click',
-        copyJson
-    );
-
-
-    document.getElementById(
-        'refresh'
-    ).addEventListener(
-        'click',
-        function () {
-            document.getElementById(
-                'copy-status'
-            ).textContent =
-                '';
-
-            collectAll();
-        }
-    );
-
-
-    // =========================================================
-    // START
-    // =========================================================
-
-    collectAll();
-
+    result.navigator = safe(collectNavigator, null);
+    result.audio = safe(collectAudio, null);
+
+    var gl = safe(collectWebGL, { gl1: false, gl2: false, data: null });
+    result.webgl = gl.data;
+    setStep("st-gl1", gl.gl1 ? "готово" : "нет", gl.gl1 ? "ok" : "bad");
+    setStep("st-gl2", gl.gl2 ? "готово" : "нет", gl.gl2 ? "ok" : "bad");
+
+    result.fonts = safe(collectFonts, null);
+    setStep("st-fonts", result.fonts ? (result.fonts.detectedCount + " из " + result.fonts.candidates) : "ошибка",
+            result.fonts ? "ok" : "bad");
+
+    setStep("st-ch", "читаю", "");
+    setStep("st-voices", "загружаю", "");
+
+    Promise.all([collectClientHints(), collectVoices()]).then(function (parts) {
+      result.clientHints = parts[0];
+      result.voices = parts[1];
+
+      var high = parts[0] && parts[0].high;
+      setStep("st-ch", high && high.model ? "готово" : (parts[0] ? "без модели" : "нет API"),
+              high && high.model ? "ok" : "");
+      setStep("st-voices", parts[1] ? (parts[1].length + " шт.") : "нет API",
+              parts[1] && parts[1].length ? "ok" : "");
+
+      renderSummary();
+      refreshRaw();
+      $("btnSave").disabled = false;
+      packResult().then(function (packed) {
+        packedText = packed;
+        $("btnCopy").disabled = false;
+      });
+      status("Снимок готов. Сохраните файл или скопируйте результат.", "ok");
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
+  else run();
 })();
 </script>
-
 </body>
 </html>
