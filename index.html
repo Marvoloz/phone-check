@@ -596,6 +596,12 @@
   var FONT_BASES = ["monospace", "sans-serif", "serif"];
   var FONT_GENERIC = ["default", "sans-serif", "serif", "monospace", "cursive", "fantasy", "system-ui", "math"];
   var GLYPH_FAMILIES = ["default", "sans-serif", "serif", "monospace", "cursive", "fantasy"];
+  // Лестница высот строки: line-height normal на разных размерах шрифта.
+  // Нужна, чтобы сравнить правила округления высоты Android и Windows не только на 72 px.
+  var LADDER_SIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28,
+    29, 30, 31, 32, 34, 36, 38, 40, 44, 48, 56, 64, 72, 96];
+  var LADDER_FAMILIES = ["sans-serif", "serif", "monospace", "source-sans-pro"];
+  var LADDER_TEXT = "Hg";
   var FONT_CANDIDATES = {
     android: ["Roboto", "Roboto Flex", "Roboto Condensed", "Roboto Mono", "Roboto Serif", "Roboto Static",
       "Noto Sans", "Noto Serif", "Noto Sans Mono", "Noto Color Emoji", "Noto Sans CJK SC", "Noto Sans CJK JP",
@@ -671,6 +677,12 @@
       });
     });
 
+    var ladder = {};
+    LADDER_FAMILIES.forEach(function (fam) {
+      var css = (fam === "sans-serif" || fam === "serif" || fam === "monospace") ? fam : quoteFont(fam);
+      ladder[fam] = LADDER_SIZES.map(function (px) { return add(css, LADDER_TEXT, px); });
+    });
+
     var glyphRows = GLYPH_CODES.map(function (cp) {
       var row = { cp: cp, cells: {} };
       GLYPH_FAMILIES.forEach(function (g) { row.cells[g] = add(fontFamilyCss(g), String.fromCodePoint(cp), GLYPH_SIZE); });
@@ -723,8 +735,14 @@
       glyphs[cpLabel(row.cp)] = cells;
     });
 
+    var ladderOut = { sizes: LADDER_SIZES, text: LADDER_TEXT };
+    LADDER_FAMILIES.forEach(function (fam) {
+      ladderOut[fam] = ladder[fam].map(function (j) { return j.h; });
+    });
+
     return {
-      version: 1,
+      version: 2,
+      ladder: ladderOut,
       testString: FONT_TEST,
       sizePx: FONT_SIZE,
       glyphSizePx: GLYPH_SIZE,
